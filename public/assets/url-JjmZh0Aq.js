@@ -1,0 +1,1 @@
+function r(t){return t?t.startsWith("//")?`https:${t}`:t.replace(/^http:\/\//i,"https://"):null}function n(t){if(!t)return"";try{return new URL(t.startsWith("http")?t:`https://${t}`).hostname.replace(/^www\./,"")}catch{return t.replace(/^https?:\/\//,"")}}export{n as d,r as e};

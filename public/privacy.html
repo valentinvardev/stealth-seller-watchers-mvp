@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · Stealth Seller</title>
+<meta name="description" content="How Stealth Seller collects, uses, and protects your data across our web app and Chrome extension.">
+<style>
+  @font-face {
+    font-family: 'Mondwest';
+    src: url('/fonts/PPMondwest-Regular.woff2') format('woff2');
+    font-display: swap;
+  }
+  /* v3 light tokens (src/v3/v3.css) */
+  :root {
+    --bg: #FAFAFA;        /* --background 0 0% 98% */
+    --fg: #0A0A0A;        /* --foreground 0 0% 4% */
+    --muted: #737373;     /* --muted-foreground 0 0% 45% */
+    --muted-bg: #EDEDED;  /* --muted 0 0% 93% */
+    --border: #E3E3E3;    /* --border 0 0% 89% */
+    --accent: #FC5815;    /* --primary 18 97% 54% */
+    --card: #F6F6F6;      /* --card 0 0% 96.5% */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px; /* v3 text-sm body */
+    line-height: 1.65;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 64px 24px 96px; }
+  h1 {
+    font-family: 'Mondwest', serif;
+    font-weight: 800;
+    font-size: 52px;
+    line-height: 1.02;
+    margin-bottom: 6px;
+  }
+  h1 .accent { color: var(--accent); }
+  .updated { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
+  /* page-hero style: semibold tight heading over a hairline separator */
+  /* v3 page-hero h2: text-xl font-semibold tracking-tight */
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin: 32px 0 8px; /* tailwind mt-8 / mb-2 */
+  }
+  p, li { color: var(--fg); margin-bottom: 8px; }
+  b { font-weight: 500; } /* v3 medium, matches th/card-title weight */
+  ul { padding-left: 20px; margin-bottom: 8px; }
+  .muted { color: var(--muted); }
+  a { color: var(--accent); }
+  /* v3 table: rounded-xl bordered container, muted header, no last-row border */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 12px 0;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--muted-bg); color: var(--muted); font-weight: 500; } /* v3 TableHead: medium, muted-foreground */
+  tr:last-child td { border-bottom: 0; }
+  /* v3 card: rounded-2xl, border, bg-card, no shadow */
+  .callout {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 16px; /* tailwind py-3 px-4 */
+    margin: 16px 0;
+  }
+  .callout p { margin-bottom: 0; }
+  /* v3 button.tsx ghost variant, default size: h-8 px-2.5 rounded-xl text-sm font-medium */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+    text-decoration: none;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .btn-ghost:hover { background: var(--muted-bg); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Privacy <span class="accent">Policy</span></h1>
+  <div class="updated">1981 LLC dba Stealth Seller. Last updated June 12, 2026</div>
+
+  <p>This Privacy Policy describes how 1981 LLC dba Stealth Seller ("Stealth Seller," the "Company," "we," "us," or "our") collects, uses, discloses, and protects Personal Data in connection with the web application available at <a href="https://app.stealthseller.co">app.stealthseller.co</a> and the Stealth Seller Chrome extension (together, the "Service"). By accessing or using the Service, you acknowledge the practices described in this Policy.</p>
+
+  <h2>Information we collect</h2>
+  <p>We collect the following categories of Personal Data, directly from you and through your use of the Service:</p>
+  <ul>
+    <li><b>Account information.</b> Name, email address, and password (stored in hashed form) provided when you register for an account.</li>
+    <li><b>Product and usage data.</b> Sellers you track, products you search for or analyze, tags and folders you create, and information about how you use features of the Service. This data is necessary to provide the core functionality of the Service.</li>
+    <li><b>Payment information.</b> Payment processing is performed by Stripe, LLC. We do not receive or store your full payment card number; we retain only your subscription status and plan.</li>
+    <li><b>Technical data.</b> Session cookies used to authenticate you, and standard server logs (IP address, browser type) maintained for security and diagnostic purposes. We do not respond to browser Do Not Track signals.</li>
+  </ul>
+
+  <h2>The Chrome extension</h2>
+  <div class="callout">
+    <p><b>In summary:</b> the extension reads product information from Amazon pages you visit in order to calculate profitability on your behalf. It does not monitor your browsing activity and does not collect data from any other website.</p>
+  </div>
+  <ul>
+    <li><b>On Amazon product and search pages</b>, the extension reads the product identifier (ASIN) and listed price from the page. When the panel is open, the ASIN is transmitted to our Service to retrieve product data for the calculator.</li>
+    <li><b>The eligibility check</b> is performed only upon your explicit request (clicking "Check"). The extension queries Amazon Seller Central using your own authenticated browser session to determine whether your seller account is permitted to sell the product, and displays the result to you. Your Seller Central credentials are never accessed, collected, or transmitted to us.</li>
+    <li><b>On websites other than Amazon</b>, the extension performs no activity unless you click its toolbar icon, which opens the calculator panel on that tab. The extension does not read the content of non-Amazon pages.</li>
+    <li><b>Panel preferences</b> (position, theme, open or closed state) are stored locally on your device and are not transmitted to us.</li>
+  </ul>
+  <p>We do not sell or transfer data collected by the extension to third parties. We do not use such data for any purpose unrelated to the extension's calculator functionality, and we do not use it to determine creditworthiness or for lending purposes.</p>
+  <p>The Company's use and transfer of information received from the extension adheres to the <a href="https://developer.chrome.com/docs/webstore/program-policies/limited-use">Chrome Web Store User Data Policy</a>, including its Limited Use requirements: such data is used solely to provide and improve the extension's user-facing features, is not sold or used for advertising, and is not reviewed by humans except with your consent or as necessary for security purposes or compliance with applicable law.</p>
+
+  <h2>Disclosure to service providers</h2>
+  <p>We disclose Personal Data to a limited number of service providers that process it on our behalf, under agreements that restrict their use of the data to the purposes for which it was disclosed:</p>
+  <table>
+    <tr><th>Provider</th><th>Purpose</th></tr>
+    <tr><td>Amazon Web Services, Inc.</td><td>Hosting and infrastructure</td></tr>
+    <tr><td>Stripe, LLC</td><td>Payment processing and billing</td></tr>
+    <tr><td>Intercom, Inc.</td><td>Customer support</td></tr>
+    <tr><td>PostHog, Inc.</td><td>Product analytics</td></tr>
+    <tr><td>Functional Software, Inc. dba Sentry</td><td>Error monitoring</td></tr>
+  </table>
+  <p>We do not sell Personal Data, and we do not share it for cross-context behavioral advertising (as "sell" and "share" are defined under California law). Because we do not sell or share Personal Data, no opt-out is required; we nonetheless treat Global Privacy Control signals as valid opt-out requests. We do not disclose Personal Data to third parties for their own marketing purposes.</p>
+
+  <h2>Data retention and your rights</h2>
+  <p>We retain Personal Data for as long as your account remains active, and thereafter only as necessary to comply with legal obligations or resolve disputes. You may request access to, correction of, or deletion of your Personal Data at any time by contacting <a href="mailto:support@stealthseller.co">support@stealthseller.co</a> or through in-app support. Upon account deletion, we remove your Personal Data from our systems within 30 days, except where retention is required by law.</p>
+  <p>We may take reasonable steps to verify your identity before fulfilling a request, and we will respond within 30 days. We do not use automated decision-making that produces legal or similarly significant effects concerning you.</p>
+
+  <h2>International transfers and legal bases</h2>
+  <p>The Service is operated from the United States, and Personal Data is processed and stored on servers located in the United States. If you access the Service from outside the United States, you acknowledge that your Personal Data will be transferred to and processed in the United States.</p>
+  <p>Where the GDPR or UK GDPR applies, we process Personal Data on the following legal bases: performance of our contract with you (provision of the Service) and our legitimate interests in securing, maintaining, and improving the Service. In addition to the rights described above, you may have the right to data portability, the right to object to or restrict processing, and the right to lodge a complaint with your local supervisory authority. To exercise any of these rights, contact <a href="mailto:support@stealthseller.co">support@stealthseller.co</a>.</p>
+
+  <h2>Security</h2>
+  <p>We implement appropriate technical and organizational measures to protect Personal Data against unauthorized access, use, or disclosure. All traffic is encrypted in transit (HTTPS), passwords are stored in hashed form, sessions are maintained using secure cookies, and access to production systems is restricted to authorized personnel.</p>
+
+  <h2>Children's privacy</h2>
+  <p>The Service is a business tool and is not directed to children under the age of 13. We do not knowingly collect Personal Data from children. If we become aware that we have collected Personal Data from a child under 13, we will delete it promptly.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>We may update this Policy from time to time. If we make material changes, we will revise this page, update the "Last updated" date above, and notify you by email or through a notice within the Service. Your continued use of the Service after such changes constitutes acceptance of the updated Policy.</p>
+
+  <h2>Contact us</h2>
+  <p>If you have questions about this Policy or our data practices, contact us at:</p>
+  <p>1981 LLC dba Stealth Seller<br><a href="mailto:support@stealthseller.co">support@stealthseller.co</a></p>
+
+  <p style="margin-top:40px; margin-left:-10px"><a class="btn-ghost" href="https://app.stealthseller.co">
+    <!-- v3 icon-arrow-left.tsx, inlined at button svg size (16px) -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 12L3 12.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M5 14L5 14.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M7 16L7 16.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M9 18L9 18.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M5 10L5 10.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M7 8L7 8.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M9 6L9 6.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M5 12L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path></svg>
+    Back to Stealth Seller</a></p>
+
+</div>
+</body>
+</html>

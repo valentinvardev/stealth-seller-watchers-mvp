@@ -1,0 +1,199 @@
+{
+  "version": 29,
+  "flags": {
+    "panel": true,
+    "tileLauncher": true,
+    "feedLauncher": true,
+    "embedMode": true,
+    "eligibility": true,
+    "driftBeacon": false,
+    "adBlock": true,
+    "tabSleep": true,
+    "hideCart": true,
+    "liveOffers": true,
+    "pageMeta": true,
+    "stockProbe": true
+  },
+  "probe": {
+    "maxWorkers": 10,
+    "seedThrottleRetries": 4,
+    "seedBackoffMs": 700,
+    "clearAboveTotal": 600,
+    "maxReseeds": 12,
+    "missesBeforeReseed": 3
+  },
+  "adBlock": {
+    "hideSelectors": [
+      "div[id^=\"ape_\"]"
+    ]
+  },
+  "tabSleep": {
+    "idleMinutes": 5,
+    "exemptPathPrefixes": [
+      "/cart",
+      "/gp/cart",
+      "/checkout",
+      "/gp/buy",
+      "/ap/",
+      "/gp/sign-in"
+    ]
+  },
+  "hideCart": {
+    "hideSelectors": [
+      "#nav-flyout-ewc",
+      ".nav-ewc-arrow"
+    ]
+  },
+  "panel": {
+    "brandMenuLayout": "grid",
+    "headerButtons": [
+      "history",
+      "settings",
+      "brand",
+      "theme",
+      "close"
+    ],
+    "footerButtons": [
+      "feedback",
+      "version",
+      "dock-left",
+      "float",
+      "dock-right",
+      "embed"
+    ]
+  },
+  "offers": {
+    "aodBasePath": "/gp/product/ajax/aodAjaxMain?asin={asin}&m=&qid=&smid=&sr=&pc=dp&filters=%7B%22all%22%3Atrue%2C%22new%22%3Atrue%7D",
+    "aodPagePath": "/gp/product/ajax/aodAjaxMain/ref=aod_page_{page}?asin={asin}&m=&qid=&smid=&sr=1-2&pc=dp&isonlyrenderofferlist=true&pageno={page}&filters=%7B%22all%22%3Atrue%2C%22new%22%3Atrue%7D",
+    "totalCountSelector": "#aod-total-offer-count",
+    "pinnedOfferSelector": "#aod-pinned-offer",
+    "offerSelector": "#aod-offer",
+    "newConditionPattern": "^(new|neu|neuf|nuevo|nuovo|novo|nieuw|ny|nowe|新品|one-time purchase)$",
+    "conditionMarkerSelector": "[data-csa-c-content-id*=\":amzn1.bot.\"]",
+    "newConditionMarkerPattern": ":amzn1\\.bot\\.NEW$",
+    "priceWholeSelector": ".a-price-whole",
+    "priceFractionSelector": ".a-price-fraction",
+    "shipsFromSelector": "#aod-offer-shipsFrom .a-col-right",
+    "amazonFulfillmentPattern": "amazon",
+    "soldBySelector": "#aod-offer-soldBy a",
+    "sellerIdPattern": "[?&](?:seller|s|me)=([A-Z0-9]{9,21})",
+    "oidSelector": "input[name=\"items[0.base][offerListingId]\"]",
+    "qtyOptionSelector": ".aod-qty-option",
+    "deliveryPriceSelector": "[data-csa-c-delivery-price]",
+    "deliveryPriceAttribute": "data-csa-c-delivery-price",
+    "perPage": 10,
+    "qtyCap": 30,
+    "freeShippingPattern": "free",
+    "fastestShippingPattern": "fastest"
+  },
+  "pageMeta": {
+    "rankRowSelector": "#detailBulletsWrapper_feature_div li, #productDetails_detailBullets_sections1 tr, #prodDetails tr, li",
+    "rankLabelPattern": "Best Sellers Rank",
+    "rankValuePattern": "#([\\d,]+)\\s+in\\s+([^(#]+?)(?:\\s*\\(|#|$)",
+    "ratingSelector": "#acrPopover, #averageCustomerReviews .a-icon-alt, .a-icon-alt",
+    "ratingPattern": "([\\d.]+)\\s*out of\\s*5",
+    "reviewCountSelector": "#acrCustomerReviewText, [data-hook=total-review-count]",
+    "boughtBadgeSelector": "#social-proofing-faceout-title-tk_bought, #socialProofingAsinFaceout_feature_div",
+    "boughtPattern": "([\\d.,]+)\\s*([Kk]?)\\+?\\s*bought in past month"
+  },
+  "product": {
+    "asinPatterns": [
+      "/(?:dp|gp/product|product|gp/aw/d)/([A-Z0-9]{10})(?:[/?#]|$)"
+    ],
+    "embedSelector": "#rightCol",
+    "priceSelectors": [
+      "#corePrice_feature_div [data-a-color=\"price\"] .a-offscreen",
+      "#corePrice_feature_div .a-offscreen",
+      "#priceblock_ourprice",
+      "#priceblock_dealprice",
+      "#priceblock_saleprice",
+      ".a-price .a-offscreen"
+    ],
+    "priceWholeSelector": ".a-price-whole",
+    "priceFractionSelector": ".a-price-fraction"
+  },
+  "search": {
+    "pathPattern": "^/s(/|$)",
+    "tileSelector": "[data-asin]:not([data-asin=\"\"]).s-result-item",
+    "gridSelector": ".s-main-slot",
+    "anchorSelectors": [
+      ".a-price",
+      "h2",
+      "[data-cy=\"title-recipe\"]"
+    ],
+    "priceSelectors": [
+      ".a-price .a-offscreen"
+    ],
+    "priceWholeSelector": ".a-price-whole",
+    "priceFractionSelector": ".a-price-fraction"
+  },
+  "feed": {
+    "targets": [
+      {
+        "listSelector": "#product-feed-list",
+        "titleSelector": "a.font-medium[href*=\"/dp/\"]",
+        "scopeSelector": ".rounded-2xl",
+        "asinTextSelector": "",
+        "backgroundClick": true,
+        "slotSelector": ".items-end.justify-between > .flex.gap-2",
+        "hoverReveal": true
+      },
+      {
+        "listSelector": "main",
+        "titleSelector": "a.block.font-medium[href*=\"/dp/\"]",
+        "scopeSelector": ".rounded-2xl",
+        "asinTextSelector": "",
+        "backgroundClick": true,
+        "slotSelector": ".items-end.justify-between > .flex.gap-2",
+        "hoverReveal": true
+      },
+      {
+        "listSelector": "table.table-fixed",
+        "titleSelector": "a.font-medium[href*=\"/dp/\"]",
+        "scopeSelector": "tr",
+        "asinTextSelector": "",
+        "backgroundClick": false
+      },
+      {
+        "listSelector": "main table",
+        "titleSelector": "td.font-medium div.truncate > a, td.font-medium div.truncate > span",
+        "scopeSelector": "tr",
+        "asinTextSelector": "td span",
+        "backgroundClick": false,
+        "insertAfterSelector": "",
+        "hoverReveal": true
+      },
+      {
+        "listSelector": "main",
+        "titleSelector": ".text-results-primary > a.font-bold[href*=\"asin=\"]",
+        "scopeSelector": ".text-results-primary",
+        "asinTextSelector": "",
+        "backgroundClick": false
+      },
+      {
+        "listSelector": "main",
+        "titleSelector": "td.sticky a.font-semibold[href*=\"asin=\"]",
+        "scopeSelector": "tr",
+        "asinTextSelector": "",
+        "backgroundClick": false
+      }
+    ]
+  },
+  "eligibility": {
+    "searchEndpointPath": "/productsearch/v2/search",
+    "loginRedirectPattern": "/(ap/)?signin|/authorization/|/account-switcher/",
+    "marketplaceBaseUrls": {
+      "1": "https://sellercentral.amazon.com",
+      "2": "https://sellercentral.amazon.co.uk",
+      "3": "https://sellercentral.amazon.de",
+      "4": "https://sellercentral.amazon.fr",
+      "5": "https://sellercentral.amazon.co.jp",
+      "6": "https://sellercentral.amazon.ca",
+      "8": "https://sellercentral.amazon.it",
+      "9": "https://sellercentral.amazon.es",
+      "10": "https://sellercentral.amazon.in",
+      "11": "https://sellercentral.amazon.com.mx",
+      "12": "https://sellercentral.amazon.com.br"
+    }
+  }
+}

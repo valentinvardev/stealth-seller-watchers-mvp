@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { initializeDemo } from "./db";
 import { router } from "./trpc";
@@ -24,9 +23,10 @@ app.use(
 );
 app.use(express.json());
 
-// Serve frontend static files
-const frontendPath = path.join(__dirname, "../../frontend/dist");
-app.use(express.static(frontendPath));
+// No static serving here on purpose: the deployed SPA is served straight from
+// the CDN (public/, see vercel.json) and locally it runs off the Vite dev
+// server with HMR. Express stays API-only, which also removes the __dirname
+// path juggling that kept breaking in the bundled function.
 
 // The real frontend's tRPC client posts to `${VITE_API_URL}/api/trpc`, so the
 // sandbox mounts there. /trpc stays as an alias for direct curl testing.
@@ -76,17 +76,21 @@ app.get("/api/auth/get-session", (req, res) => {
   res.json(SANDBOX_SESSION);
 });
 
-// Fallback to index.html for React Router
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+// Unknown API path: answer JSON, never HTML. The SPA fallback is handled by
+// the CDN rewrite, so anything reaching Express and not matching is a real miss.
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found", path: req.originalUrl });
 });
 
-// On Vercel the platform invokes the exported handler; there is no port to bind.
-// Locally we still need a listening server.
-if (!process.env.VERCEL) {
+// Bind a port only when this file is run directly (`node dist/server.js`).
+// When it is imported -- by the Vercel function or any local harness -- the
+// caller owns the transport and binding here would either crash on a taken
+// port or leak a listener. Keyed on require.main rather than a VERCEL env var
+// so it behaves the same in every environment.
+if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Watchers running on http://localhost:${PORT}`);
-    console.log(`tRPC endpoint: http://localhost:${PORT}/trpc`);
+    console.log(`Watchers API on http://localhost:${PORT}`);
+    console.log(`tRPC endpoint: http://localhost:${PORT}/api/trpc`);
   });
 }
 

@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const path_1 = __importDefault(require("path"));
 const express_2 = require("@trpc/server/adapters/express");
 const db_1 = require("./db");
 const trpc_1 = require("./trpc");
@@ -23,9 +22,10 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 app.use(express_1.default.json());
-// Serve frontend static files
-const frontendPath = path_1.default.join(__dirname, "../../frontend/dist");
-app.use(express_1.default.static(frontendPath));
+// No static serving here on purpose: the deployed SPA is served straight from
+// the CDN (public/, see vercel.json) and locally it runs off the Vite dev
+// server with HMR. Express stays API-only, which also removes the __dirname
+// path juggling that kept breaking in the bundled function.
 // The real frontend's tRPC client posts to `${VITE_API_URL}/api/trpc`, so the
 // sandbox mounts there. /trpc stays as an alias for direct curl testing.
 app.use(["/api/trpc", "/trpc"], (0, express_2.createExpressMiddleware)({
@@ -67,16 +67,20 @@ const SANDBOX_SESSION = {
 app.get("/api/auth/get-session", (req, res) => {
     res.json(SANDBOX_SESSION);
 });
-// Fallback to index.html for React Router
-app.get("*", (req, res) => {
-    res.sendFile(path_1.default.join(frontendPath, "index.html"));
+// Unknown API path: answer JSON, never HTML. The SPA fallback is handled by
+// the CDN rewrite, so anything reaching Express and not matching is a real miss.
+app.use((req, res) => {
+    res.status(404).json({ error: "Not found", path: req.originalUrl });
 });
-// On Vercel the platform invokes the exported handler; there is no port to bind.
-// Locally we still need a listening server.
-if (!process.env.VERCEL) {
+// Bind a port only when this file is run directly (`node dist/server.js`).
+// When it is imported -- by the Vercel function or any local harness -- the
+// caller owns the transport and binding here would either crash on a taken
+// port or leak a listener. Keyed on require.main rather than a VERCEL env var
+// so it behaves the same in every environment.
+if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`Watchers running on http://localhost:${PORT}`);
-        console.log(`tRPC endpoint: http://localhost:${PORT}/trpc`);
+        console.log(`Watchers API on http://localhost:${PORT}`);
+        console.log(`tRPC endpoint: http://localhost:${PORT}/api/trpc`);
     });
 }
 exports.default = app;

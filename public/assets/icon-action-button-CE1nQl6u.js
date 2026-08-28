@@ -1,0 +1,1 @@
+const e="flex size-7 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";export{e as i};

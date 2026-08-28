@@ -1,0 +1,1 @@
+function i(e,s){let t="";return!e||!e.includes("http")||(e.includes("me=")?t=e.split("me=")[1].split("&")[0]:e.includes("&seller=")?t=e.split("&seller=")[1].split("&")[0]:e.includes("https://keepa.com/#!seller")&&(t=e.split("-")[1]),!t)?e:t}export{i as e};

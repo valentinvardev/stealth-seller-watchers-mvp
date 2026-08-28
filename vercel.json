@@ -1,22 +1,7 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "backend/dist/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "backend/dist/**,frontend/dist/**"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/trpc/(.*)",
-      "dest": "backend/dist/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "backend/dist/server.js"
-    }
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -1,228 +1,100 @@
-# Stealth Seller Watchers MVP
+# Watchers sandbox
 
-A standalone MVP of the Watchers feature for Stealth Seller. Monitor Amazon products and custom URLs for price changes, stock updates, and more.
+A runnable copy of the Watchers feature: the real v3 UI from
+`stealth-seller-frontend` (dev branch) on top of a standalone tRPC backend, in
+one deploy. Built to look at and click through, not to ship.
 
-## Features
+## What it is
 
-- **Create Watches**: Monitor products by ASIN or custom URL
-- **Conditions**: Price drops, price changes, back in stock
-- **Smart Scheduling**: Configurable check intervals (2h, 3h, 6h, 24h)
-- **Alert History**: Track all triggered alerts
-- **Credit System**: Monthly credit grants + purchased credits
-- **Watch Management**: Snooze, archive, and manage active watches
-- **Responsive Design**: Mobile-friendly interface using Tailwind CSS
-- **Stealth Seller Branding**: Orange (#FC5815) accent with dark slate neutrals
+- **UI** — the actual `src/v3/features/watchers` build from the dev branch. Not
+  a reconstruction; the page, table, alert feed and create dialog are the ones
+  in the product.
+- **API** — a small Express + tRPC service that answers the same procedure
+  names the real backend exposes (`monitoring.*`), backed by an in-memory store
+  instead of Postgres.
+- **Auth** — stubbed. There is no sign-in; every visitor is one fixed comped
+  admin. See *Caveats*.
 
-## Architecture
+## Layout
 
-### Backend
-- **Framework**: Express + tRPC
-- **Database**: In-memory (for MVP)
-- **API**: Type-safe tRPC procedures
-- **Runtime**: Node.js with TypeScript
+```
+api/[...path].js   Vercel function -> re-exports the compiled Express app
+backend/           the API: source in src/, compiled output in dist/
+public/            the real v3 frontend build (produced by scripts/)
+scripts/           build-frontend.sh -- rebuilds public/ from the frontend repo
+verify-local.cjs   rehearses the deploy layout locally
+```
 
-### Frontend
-- **Location**: `stealth-seller-frontend` (dev branch)
-- **Framework**: React 18 + Vite
-- **Styling**: Tailwind CSS + Radix UI primitives + Stealth Seller design system
-- **Client**: tRPC + TanStack Query
-- **TypeScript**: Strict mode for type safety
-- **Note**: This repo provides backend API only. Use frontend from stealth-seller-frontend/dev
+`backend/dist` and `public/` are committed on purpose: Vercel then only
+installs and runs, with nothing to compile.
 
-## Quick Start
+## Run it locally
 
-### Prerequisites
-- Node.js >= 18
-- npm or pnpm
-- GitHub token (for stealth-seller-frontend private packages)
+Two ways.
 
-### Step 1: Backend Setup (This Repo)
+**Against the deployed-style build** (what the deploy serves):
 
 ```bash
-cd stealth-seller-watchers-mvp/backend
 npm install
-npm run dev
-# Runs on http://localhost:3000
+node verify-local.cjs        # http://localhost:3010
 ```
 
-### Step 2: Frontend Setup (Use Dev Branch)
+**Against the frontend dev server** (HMR, for actually working on the UI):
 
 ```bash
-# Setup GitHub token first (see GITHUB_TOKEN_SETUP.md)
-cd stealth-seller-frontend
-git checkout dev
+# terminal 1 -- API
+cd backend && npm install && npm run build && node dist/server.js   # :3000
+
+# terminal 2 -- the frontend repo
+cd ../stealth-seller-frontend
+gh auth refresh -s read:packages     # once; see GITHUB_TOKEN_SETUP.md
+export GITHUB_TOKEN=$(gh auth token)
 npm install --legacy-peer-deps
+echo 'VITE_API_URL=http://localhost:3000' > .env.local
 npm run dev
-# Runs on http://localhost:5173
 ```
 
-### Step 3: Visit the App
+Then open `/watchers`.
 
-Open http://localhost:5173 in your browser
+## Rebuilding the UI
 
-**Expected:**
-- Beautiful Watchers dashboard matching the Stealth Seller design
-- Ability to create watches
-- Alert history
-- Watch management
-
----
-
-## Architecture
-
-**Backend** (This Repo)
-- Express + tRPC API
-- Firecrawl integration for URL scraping
-- Type-safe procedures
-- Runs on `http://localhost:3000`
-
-**Frontend** (stealth-seller-frontend/dev)
-- React + Vite application
-- Stealth Seller design system
-- Communicates with backend via tRPC
-- Runs on `http://localhost:5173`
-
-**Communication**
-- Frontend proxies `/trpc` requests to backend
-- Type-safe tRPC ensures consistency
-- Environment variable `VITE_API_URL` controls backend URL
-
-The frontend will proxy tRPC calls to the backend.
-
-### Build
+After changing the frontend repo:
 
 ```bash
-pnpm build
+export GITHUB_TOKEN=$(gh auth token)
+bash scripts/build-frontend.sh
 ```
 
-## Project Structure
+That rebuilds `public/`. The script rewrites the baked API origin to
+`window.location.origin`, so the bundle is not pinned to one domain and preview
+deployments work — see the comment at the top of the script.
 
-```
-stealth-seller-watchers-mvp/
-├── backend/
-│   ├── src/
-│   │   ├── db.ts           # In-memory database
-│   │   ├── trpc.ts         # tRPC router and procedures
-│   │   └── server.ts       # Express server
-│   ├── package.json
-│   └── tsconfig.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── ui/         # Radix UI + Tailwind components
-│   │   │   ├── create-watch-dialog.tsx
-│   │   │   └── alert-history.tsx
-│   │   ├── pages/
-│   │   │   └── watchers.tsx   # Main page
-│   │   ├── lib/
-│   │   │   └── utils.ts       # Utility functions
-│   │   ├── trpc.ts            # tRPC client
-│   │   ├── App.tsx            # App root
-│   │   ├── main.tsx           # Entry point
-│   │   └── globals.css        # Global styles
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   └── tsconfig.json
-├── package.json            # Root workspace config
-└── README.md
-```
+## Deploy
 
-## API Routes
+Vercel, zero config. `api/` is picked up automatically, `public/` is served as
+static, and `vercel.json` adds the SPA fallback. No environment variables are
+required.
 
-### Watches
-- `listWatches` - Get active watches
-- `createWatch` - Create a new watch
-- `archiveWatch` - Archive a watch
-- `snoozeWatch` - Snooze a watch
-- `unsnoozeWatch` - Resume a snoozed watch
-- `setWatchCadence` - Change polling interval
+## What the API implements
 
-### Credits
-- `getCredits` - Get current credit balance
+Under `monitoring.*`: `listWatches`, `createWatch`, `archiveWatch`,
+`snoozeWatch`, `unsnoozeWatch`, `setWatchCadence`, `setWatchThreshold`,
+`getCredits`, `getWatcherStatus`, `setWatchersPaused`, `listAlerts`. Plus
+`simulateAlert`, which is sandbox-only and fires a synthetic alert so the feed
+can be demoed without waiting on a poll.
 
-### Alerts
-- `listAlerts` - Get alert history
-- `simulateAlert` - Simulate an alert (demo only)
+`account.getMe` and `/api/auth/get-session` exist only to satisfy the
+frontend's route guards.
 
-## Design System
+## Caveats
 
-- **Primary Color**: #FC5815 (Stealth Seller Orange)
-- **Neutrals**: Dark slate (50-950)
-- **Typography**: Inter font family
-- **Components**: Radix UI primitives + custom Tailwind styling
-- **Responsive**: Mobile-first with Tailwind breakpoints
+Worth knowing before showing this to anyone:
 
-## Demo Data
-
-The backend initializes with demo user and watch data:
-- Demo user ID with premium tier
-- Sample watch on Sony headphones
-- Sample alert in history
-
-## Future Enhancements
-
-- Real database (PostgreSQL + Drizzle ORM)
-- Firecrawl integration for URL scraping
-- Keepa API integration for ASIN data
-- Email/SMS alert delivery
-- Real-time polling worker
-- User authentication
-- Multi-user support
-- Credit purchase flow
-- Webhook integrations
-
-## Development Notes
-
-### Type Safety
-- Backend and frontend share tRPC type definitions
-- All API inputs validated with Zod
-- Strict TypeScript mode enabled
-
-### Styling
-- Tailwind CSS for all styling
-- Custom color palette matching Stealth Seller branding
-- Dark mode support via CSS variables
-- Responsive design with mobile-first approach
-
-### State Management
-- TanStack Query for server state
-- React hooks for local state
-- tRPC mutations for server actions
-
-## Deployment
-
-### Backend
-```bash
-cd backend
-npm run build
-npm start
-```
-
-### Frontend
-```bash
-cd frontend
-npm run build
-# Serve dist/ directory
-```
-
-## Troubleshooting
-
-**Frontend can't connect to backend?**
-- Ensure backend is running on port 3000
-- Check Vite proxy config in `frontend/vite.config.ts`
-- Verify CORS is enabled in backend
-
-**Port 3000 or 5173 already in use?**
-- Change `PORT` env var for backend
-- Change `--port` flag for frontend
-
-**TypeScript errors in frontend?**
-- Run `pnpm install` in backend to generate type definitions
-- Ensure `tsconfig.json` path mappings are correct
-
-## License
-
-Proprietary - Stealth Seller
+- **State is in memory.** Watches and alerts live in the function's process and
+  are gone on the next cold start. Fine for a walkthrough; do not expect
+  anything created to still be there later.
+- **There is no auth.** Anyone with the URL is signed in as a comped admin.
+  Treat the link as public.
+- **Firecrawl is wired but not driving anything.** `backend/src/integrations/firecrawl.ts`
+  can scrape a URL for price and stock, but no poller calls it yet — the data
+  on screen is seeded, not live.

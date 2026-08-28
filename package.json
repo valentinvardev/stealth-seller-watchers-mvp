@@ -1,17 +1,18 @@
 {
   "name": "stealth-seller-watchers-mvp",
   "version": "0.1.0",
-  "description": "Stealth Seller Watchers MVP - Monitor products and get alerts",
+  "description": "Watchers sandbox: tRPC backend + the real v3 frontend build, one deploy",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
     "backend:dev": "cd backend && npm run dev",
-    "frontend:dev": "cd frontend && npm run dev",
-    "build": "npm run backend:build && npm run frontend:build",
-    "backend:build": "cd backend && npm run build",
-    "frontend:build": "cd frontend && npm run build"
+    "backend:build": "cd backend && npm run build"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+  "dependencies": {
+    "@trpc/server": "^10.45.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "superjson": "^2.2.6",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4"
   }
 }
