@@ -42,8 +42,13 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Watchers running on http://localhost:${PORT}`);
-  console.log(`tRPC endpoint: http://localhost:${PORT}/trpc`);
-});
+// On Vercel the platform invokes the exported handler; there is no port to bind.
+// Locally we still need a listening server.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Watchers running on http://localhost:${PORT}`);
+    console.log(`tRPC endpoint: http://localhost:${PORT}/trpc`);
+  });
+}
+
+export default app;

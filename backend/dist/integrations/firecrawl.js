@@ -1,8 +1,13 @@
+"use strict";
 // Firecrawl integration for URL scraping
 // API Key: fc-1f1a49f82c3242fba26c235967b6b42a
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.scrapeUrl = scrapeUrl;
+exports.extractPriceFromUrl = extractPriceFromUrl;
+exports.checkStockFromUrl = checkStockFromUrl;
 const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY || "fc-1f1a49f82c3242fba26c235967b6b42a";
 const FIRECRAWL_API_URL = "https://api.firecrawl.dev/v0";
-export async function scrapeUrl(url) {
+async function scrapeUrl(url) {
     try {
         const response = await fetch(`${FIRECRAWL_API_URL}/scrape`, {
             method: "POST",
@@ -39,7 +44,7 @@ export async function scrapeUrl(url) {
         };
     }
 }
-export async function extractPriceFromUrl(url) {
+async function extractPriceFromUrl(url) {
     const scraped = await scrapeUrl(url);
     if (!scraped.success || !scraped.data) {
         return { price: null, currency: "USD", rawText: "" };
@@ -60,7 +65,7 @@ export async function extractPriceFromUrl(url) {
     }
     return { price: null, currency: "USD", rawText: text.substring(0, 500) };
 }
-export async function checkStockFromUrl(url) {
+async function checkStockFromUrl(url) {
     const scraped = await scrapeUrl(url);
     if (!scraped.success || !scraped.data) {
         return { inStock: false, indicators: ["Unable to scrape"] };

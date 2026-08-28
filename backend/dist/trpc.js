@@ -1,29 +1,32 @@
-import { initTRPC, TRPCError } from "@trpc/server";
-import { z } from "zod";
-import { v4 as uuid } from "uuid";
-import { database, findOrCreateTarget } from "./db";
-const t = initTRPC.context().create();
-const PollIntervalEnum = z.union([z.literal(120), z.literal(180), z.literal(360), z.literal(1440)]);
-const CreateWatchSchema = z.object({
-    targetType: z.enum(["asin", "url"]),
-    asin: z.string().optional(),
-    url: z.string().url().optional(),
-    marketplace: z.number().int(),
-    condition: z.enum(["price_drop", "back_in_stock", "price_change"]),
-    thresholdCents: z.number().int().positive().optional(),
-    thresholdPercent: z.number().int().min(1).max(99).optional(),
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
+const server_1 = require("@trpc/server");
+const zod_1 = require("zod");
+const uuid_1 = require("uuid");
+const db_1 = require("./db");
+const t = server_1.initTRPC.context().create();
+const PollIntervalEnum = zod_1.z.union([zod_1.z.literal(120), zod_1.z.literal(180), zod_1.z.literal(360), zod_1.z.literal(1440)]);
+const CreateWatchSchema = zod_1.z.object({
+    targetType: zod_1.z.enum(["asin", "url"]),
+    asin: zod_1.z.string().optional(),
+    url: zod_1.z.string().url().optional(),
+    marketplace: zod_1.z.number().int(),
+    condition: zod_1.z.enum(["price_drop", "back_in_stock", "price_change"]),
+    thresholdCents: zod_1.z.number().int().positive().optional(),
+    thresholdPercent: zod_1.z.number().int().min(1).max(99).optional(),
     pollIntervalMinutes: PollIntervalEnum,
-    expiresAt: z.string().datetime(),
-    reason: z.string().optional(),
+    expiresAt: zod_1.z.string().datetime(),
+    reason: zod_1.z.string().optional(),
 });
-export const router = t.router({
+exports.router = t.router({
     // List all active watches for the user
     listWatches: t.procedure.query(({ ctx }) => {
-        const watches = Array.from(database.watches.values())
+        const watches = Array.from(db_1.database.watches.values())
             .filter((w) => w.userId === ctx.userId && w.status === "active")
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
             .map((w) => {
-            const target = database.targets.get(w.targetId);
+            const target = db_1.database.targets.get(w.targetId);
             if (!target)
                 return null;
             return {
@@ -37,7 +40,7 @@ export const router = t.router({
                 expiresAt: w.expiresAt,
                 status: w.status,
                 createdAt: w.createdAt,
-                alertCount: Array.from(database.alerts.values()).filter((a) => a.watchId === w.id).length,
+                alertCount: Array.from(db_1.database.alerts.values()).filter((a) => a.watchId === w.id).length,
                 target: {
                     targetType: target.targetType,
                     asin: target.asin,
@@ -59,20 +62,20 @@ export const router = t.router({
     // Create a new watch
     createWatch: t.procedure.input(CreateWatchSchema).mutation(({ input, ctx }) => {
         if (input.targetType === "asin" && !input.asin) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "BAD_REQUEST",
                 message: "ASIN is required for ASIN watches",
             });
         }
         if (input.targetType === "url" && !input.url) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "BAD_REQUEST",
                 message: "URL is required for URL watches",
             });
         }
-        const target = findOrCreateTarget(input.targetType, input.asin, input.marketplace, input.url);
+        const target = (0, db_1.findOrCreateTarget)(input.targetType, input.asin, input.marketplace, input.url);
         const watch = {
-            id: "watch-" + uuid(),
+            id: "watch-" + (0, uuid_1.v4)(),
             userId: ctx.userId,
             targetId: target.id,
             condition: input.condition,
@@ -87,16 +90,16 @@ export const router = t.router({
             archivedAt: null,
             marketplace: input.marketplace,
         };
-        database.watches.set(watch.id, watch);
+        db_1.database.watches.set(watch.id, watch);
         return watch;
     }),
     // Archive a watch
     archiveWatch: t.procedure
-        .input(z.object({ watchId: z.string() }))
+        .input(zod_1.z.object({ watchId: zod_1.z.string() }))
         .mutation(({ input, ctx }) => {
-        const watch = database.watches.get(input.watchId);
+        const watch = db_1.database.watches.get(input.watchId);
         if (!watch || watch.userId !== ctx.userId) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "NOT_FOUND",
                 message: "Watch not found",
             });
@@ -107,14 +110,14 @@ export const router = t.router({
     }),
     // Snooze a watch
     snoozeWatch: t.procedure
-        .input(z.object({
-        watchId: z.string(),
-        snoozeUntil: z.string().datetime(),
+        .input(zod_1.z.object({
+        watchId: zod_1.z.string(),
+        snoozeUntil: zod_1.z.string().datetime(),
     }))
         .mutation(({ input, ctx }) => {
-        const watch = database.watches.get(input.watchId);
+        const watch = db_1.database.watches.get(input.watchId);
         if (!watch || watch.userId !== ctx.userId) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "NOT_FOUND",
                 message: "Watch not found",
             });
@@ -124,17 +127,17 @@ export const router = t.router({
     }),
     // Unsnooz a watch
     unsnoozeWatch: t.procedure
-        .input(z.object({ watchId: z.string() }))
+        .input(zod_1.z.object({ watchId: zod_1.z.string() }))
         .mutation(({ input, ctx }) => {
-        const watch = database.watches.get(input.watchId);
+        const watch = db_1.database.watches.get(input.watchId);
         if (!watch || watch.userId !== ctx.userId) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "NOT_FOUND",
                 message: "Watch not found",
             });
         }
         if (!watch.snoozeUntil) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "BAD_REQUEST",
                 message: "Watch is not snoozed",
             });
@@ -144,14 +147,14 @@ export const router = t.router({
     }),
     // Set watch cadence (polling interval)
     setWatchCadence: t.procedure
-        .input(z.object({
-        watchId: z.string(),
+        .input(zod_1.z.object({
+        watchId: zod_1.z.string(),
         pollIntervalMinutes: PollIntervalEnum,
     }))
         .mutation(({ input, ctx }) => {
-        const watch = database.watches.get(input.watchId);
+        const watch = db_1.database.watches.get(input.watchId);
         if (!watch || watch.userId !== ctx.userId) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "NOT_FOUND",
                 message: "Watch not found",
             });
@@ -161,9 +164,9 @@ export const router = t.router({
     }),
     // Get credits
     getCredits: t.procedure.query(({ ctx }) => {
-        const user = database.users.get(ctx.userId);
+        const user = db_1.database.users.get(ctx.userId);
         if (!user) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "NOT_FOUND",
                 message: "User not found",
             });
@@ -179,15 +182,15 @@ export const router = t.router({
     }),
     // List alerts
     listAlerts: t.procedure
-        .input(z.object({ limit: z.number().int().default(50), cursor: z.string().optional() }))
+        .input(zod_1.z.object({ limit: zod_1.z.number().int().default(50), cursor: zod_1.z.string().optional() }))
         .query(({ input, ctx }) => {
-        const alerts = Array.from(database.alerts.values())
+        const alerts = Array.from(db_1.database.alerts.values())
             .filter((a) => a.userId === ctx.userId)
             .sort((a, b) => b.triggeredAt.getTime() - a.triggeredAt.getTime())
             .slice(0, input.limit)
             .map((a) => {
-            const watch = database.watches.get(a.watchId);
-            const target = watch ? database.targets.get(watch.targetId) : null;
+            const watch = db_1.database.watches.get(a.watchId);
+            const target = watch ? db_1.database.targets.get(watch.targetId) : null;
             return {
                 id: a.id,
                 triggeredAt: a.triggeredAt,
@@ -211,17 +214,17 @@ export const router = t.router({
     }),
     // Simulate an alert (for demo purposes)
     simulateAlert: t.procedure
-        .input(z.object({ watchId: z.string(), message: z.string() }))
+        .input(zod_1.z.object({ watchId: zod_1.z.string(), message: zod_1.z.string() }))
         .mutation(({ input, ctx }) => {
-        const watch = database.watches.get(input.watchId);
+        const watch = db_1.database.watches.get(input.watchId);
         if (!watch || watch.userId !== ctx.userId) {
-            throw new TRPCError({
+            throw new server_1.TRPCError({
                 code: "NOT_FOUND",
                 message: "Watch not found",
             });
         }
         const alert = {
-            id: "alert-" + uuid(),
+            id: "alert-" + (0, uuid_1.v4)(),
             watchId: input.watchId,
             userId: ctx.userId,
             marketplace: ctx.marketplace,
@@ -229,7 +232,7 @@ export const router = t.router({
             whatChanged: input.message,
             deliveryStatus: "sent",
         };
-        database.alerts.set(alert.id, alert);
+        db_1.database.alerts.set(alert.id, alert);
         watch.status = "triggered";
         return alert;
     }),

@@ -1,15 +1,20 @@
-import { v4 as uuid } from "uuid";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.database = void 0;
+exports.initializeDemo = initializeDemo;
+exports.findOrCreateTarget = findOrCreateTarget;
+const uuid_1 = require("uuid");
 // In-memory storage for MVP
-export const database = {
+exports.database = {
     watches: new Map(),
     targets: new Map(),
     alerts: new Map(),
     users: new Map(),
 };
 // Initialize demo user
-export function initializeDemo() {
-    const userId = "demo-user-" + uuid();
-    database.users.set(userId, {
+function initializeDemo() {
+    const userId = "demo-user-" + (0, uuid_1.v4)();
+    exports.database.users.set(userId, {
         id: userId,
         watchCreditsGrant: 100,
         watchCreditsPurchased: 50,
@@ -19,8 +24,8 @@ export function initializeDemo() {
         marketplace: 1,
     });
     // Add demo watch target
-    const targetId = "target-" + uuid();
-    database.targets.set(targetId, {
+    const targetId = "target-" + (0, uuid_1.v4)();
+    exports.database.targets.set(targetId, {
         id: targetId,
         targetType: "asin",
         asin: "B08N5Z7GRT",
@@ -42,8 +47,8 @@ export function initializeDemo() {
         pausedUntil: null,
     });
     // Add demo watch
-    const watchId = "watch-" + uuid();
-    database.watches.set(watchId, {
+    const watchId = "watch-" + (0, uuid_1.v4)();
+    exports.database.watches.set(watchId, {
         id: watchId,
         userId,
         targetId,
@@ -60,8 +65,8 @@ export function initializeDemo() {
         marketplace: 1,
     });
     // Add demo alert
-    const alertId = "alert-" + uuid();
-    database.alerts.set(alertId, {
+    const alertId = "alert-" + (0, uuid_1.v4)();
+    exports.database.alerts.set(alertId, {
         id: alertId,
         watchId,
         userId,
@@ -73,8 +78,8 @@ export function initializeDemo() {
     return userId;
 }
 // Utility to find or create a watch target
-export function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl) {
-    const existing = Array.from(database.targets.values()).find((t) => {
+function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl) {
+    const existing = Array.from(exports.database.targets.values()).find((t) => {
         if (targetType === "asin") {
             return t.targetType === "asin" && t.asin === asin && t.marketplace === marketplace;
         }
@@ -84,7 +89,7 @@ export function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl)
     });
     if (existing)
         return existing;
-    const id = "target-" + uuid();
+    const id = "target-" + (0, uuid_1.v4)();
     const target = {
         id,
         targetType,
@@ -101,7 +106,7 @@ export function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl)
         lastFailedAt: null,
         pausedUntil: null,
     };
-    database.targets.set(id, target);
+    exports.database.targets.set(id, target);
     return target;
 }
 //# sourceMappingURL=db.js.map
