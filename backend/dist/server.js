@@ -24001,6 +24001,11 @@ function initializeDemo() {
   seed_products_default.forEach((product, i) => {
     const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
+    const priceHistory = scrapeFailed ? null : Array.from({ length: 12 }, (_, j) => {
+      if (j === 11) return product.priceCents;
+      const wobble = ((i * 7 + j * 13) % 9 - 4) / 100;
+      return Math.round(product.priceCents * (1 + wobble));
+    });
     database.targets.set(targetId, {
       id: targetId,
       targetType: "url",
@@ -24014,6 +24019,7 @@ function initializeDemo() {
       // honestly beats pretending every retailer scrapes cleanly.
       lastPolledAt: scrapeFailed ? null : new Date(anchor - (i + 1) * 9e5),
       lastPriceCents: product.priceCents,
+      priceHistory,
       lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
       lastSnapshot: {
         title: product.title,
@@ -24087,6 +24093,7 @@ function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl) {
     lastPolledAt: null,
     lastPriceCents: null,
     lastStockStatus: "unknown",
+    priceHistory: null,
     lastSnapshot: null,
     failureCount: 0,
     lastFailedAt: null,
@@ -29388,7 +29395,8 @@ function serializeWatch(w) {
       failureCount: target?.failureCount ?? 0,
       lastFailedAt: target?.lastFailedAt ?? null,
       currentPriceCents: target?.lastPriceCents ?? null,
-      currentStock: target?.lastStockStatus ?? null
+      currentStock: target?.lastStockStatus ?? null,
+      priceHistory: target?.priceHistory ?? null
     }
   };
 }

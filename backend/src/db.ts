@@ -29,6 +29,9 @@ export type WatchTarget = {
   lastPolledAt: Date | null;
   lastPriceCents: number | null;
   lastStockStatus: string | null;
+  // price seen at each past check, oldest -> newest; feeds the dialog's
+  // "price across checks" strip (P2: history as the honest liveness signal)
+  priceHistory: number[] | null;
   lastSnapshot: any;
   failureCount: number;
   lastFailedAt: Date | null;
@@ -100,6 +103,17 @@ export function initializeDemo() {
     const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
 
+    // 12 past checks of price history, deterministic (same wobble on every
+    // instance, ±4%) and ending on the real scraped price so the strip's
+    // endpoint always agrees with the row.
+    const priceHistory = scrapeFailed
+      ? null
+      : Array.from({ length: 12 }, (_, j) => {
+          if (j === 11) return product.priceCents as number;
+          const wobble = (((i * 7 + j * 13) % 9) - 4) / 100;
+          return Math.round((product.priceCents as number) * (1 + wobble));
+        });
+
     database.targets.set(targetId, {
       id: targetId,
       targetType: "url",
@@ -113,6 +127,7 @@ export function initializeDemo() {
       // honestly beats pretending every retailer scrapes cleanly.
       lastPolledAt: scrapeFailed ? null : new Date(anchor - (i + 1) * 900000),
       lastPriceCents: product.priceCents,
+      priceHistory,
       lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
       lastSnapshot: {
         title: product.title,
@@ -204,6 +219,7 @@ export function findOrCreateTarget(
     lastPolledAt: null,
     lastPriceCents: null,
     lastStockStatus: "unknown",
+    priceHistory: null,
     lastSnapshot: null,
     failureCount: 0,
     lastFailedAt: null,
