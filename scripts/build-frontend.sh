@@ -48,14 +48,16 @@ if [ "$AFTER" != "0" ]; then
 fi
 
 echo "==> copying into $HERE/public"
-# rm -rf fails here if anything is still serving public/ -- a local server run
-# earlier in the session holds the files open on Windows. The message is easy to
-# miss, so verify the copy landed rather than trusting the exit code alone.
-if ! rm -rf "$HERE/public"; then
-  echo "error: could not clear public/ -- stop anything serving it and retry" >&2
+# Merge, don't replace: hashed chunks from PREVIOUS deploys stay in place. A
+# tab that was open before a deploy lazy-loads chunks by its own old hashes;
+# deleting them turns every redeploy into a "reload page" error screen for
+# anyone mid-session. Content-hashed files never conflict, so keeping them is
+# always correct -- only the root files (index.html etc.) are replaced.
+mkdir -p "$HERE/public"
+if ! find "$HERE/public" -maxdepth 1 -type f -delete; then
+  echo "error: could not clear public/ root files -- stop anything serving it" >&2
   exit 1
 fi
-mkdir -p "$HERE/public"
 cp -r build/. "$HERE/public/"
 
 WANT=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' build/index.html | head -1)
