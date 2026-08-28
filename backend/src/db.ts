@@ -1,3 +1,4 @@
+import seedProducts from "./seed-products.json";
 import { v4 as uuid } from "uuid";
 
 export type Watch = {
@@ -75,59 +76,80 @@ export function initializeDemo() {
     marketplace: 1,
   });
 
-  // Add demo watch target
-  const targetId = "target-" + uuid();
-  database.targets.set(targetId, {
-    id: targetId,
-    targetType: "asin",
-    asin: "B08N5Z7GRT",
-    marketplace: 1,
-    normalizedUrl: null,
-    pollIntervalMinutes: 360,
-    nextPollAt: new Date(Date.now() + 3600000),
-    lastPolledAt: new Date(Date.now() - 3600000),
-    lastPriceCents: 2999,
-    lastStockStatus: "in_stock",
-    lastSnapshot: {
-      title: "Sony WH-1000XM5 Wireless Headphones",
-      imageUrl: "https://images-na.ssl-images-amazon.com/images/I/51qVuAeaCqL.jpg",
-      priceCents: 2999,
-      stockStatus: "in_stock",
-    },
-    failureCount: 0,
-    lastFailedAt: null,
-    pausedUntil: null,
-  });
+  // Seed one watch per product in seed-products.json -- real titles, prices and
+  // images pulled from the live pages by scripts/scrape-seed.mjs. Baked at build
+  // time rather than scraped here, so a cold start stays fast and free.
+  const CADENCES: Watch["pollIntervalMinutes"][] = [120, 180, 360, 1440];
 
-  // Add demo watch
-  const watchId = "watch-" + uuid();
-  database.watches.set(watchId, {
-    id: watchId,
-    userId,
-    targetId,
-    condition: "price_drop",
-    thresholdCents: 2500,
-    thresholdPercent: null,
-    reason: null,
-    pollIntervalMinutes: 360,
-    snoozeUntil: null,
-    expiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-    status: "active",
-    createdAt: new Date(Date.now() - 24 * 3600000),
-    archivedAt: null,
-    marketplace: 1,
-  });
+  seedProducts.forEach((product, i) => {
+    const targetId = "target-" + uuid();
+    const scrapeFailed = !!product.failed || product.priceCents === null;
 
-  // Add demo alert
-  const alertId = "alert-" + uuid();
-  database.alerts.set(alertId, {
-    id: alertId,
-    watchId,
-    userId,
-    marketplace: 1,
-    triggeredAt: new Date(Date.now() - 2 * 3600000),
-    whatChanged: "Price dropped from $299.99 to $279.99 (6.7% drop)",
-    deliveryStatus: "sent",
+    database.targets.set(targetId, {
+      id: targetId,
+      targetType: "url",
+      asin: null,
+      marketplace: 1,
+      normalizedUrl: product.url,
+      pollIntervalMinutes: CADENCES[i % CADENCES.length],
+      nextPollAt: new Date(Date.now() + 3600000),
+      // A page we could not read gets no successful poll and a failure stamp,
+      // which is what drives the row's "can't read the page" state. Seeding it
+      // honestly beats pretending every retailer scrapes cleanly.
+      lastPolledAt: scrapeFailed ? null : new Date(Date.now() - (i + 1) * 900000),
+      lastPriceCents: product.priceCents,
+      lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
+      lastSnapshot: {
+        title: product.title,
+        imageUrl: product.image,
+        priceCents: product.priceCents,
+        stockStatus: scrapeFailed ? "unknown" : "in_stock",
+      },
+      failureCount: scrapeFailed ? 3 : 0,
+      lastFailedAt: scrapeFailed ? new Date(Date.now() - 3600000) : null,
+      pausedUntil: null,
+    });
+
+    // Alternate the condition so both branches of the UI are represented, and
+    // put the price target ~10% under the current price so it reads as a real
+    // goal rather than an arbitrary number.
+    const isPriceWatch = i % 3 !== 2;
+    const watchId = "watch-" + uuid();
+    database.watches.set(watchId, {
+      id: watchId,
+      userId,
+      targetId,
+      condition: isPriceWatch ? "price_drop" : "back_in_stock",
+      thresholdCents:
+        isPriceWatch && product.priceCents ? Math.round(product.priceCents * 0.9) : null,
+      thresholdPercent: null,
+      reason: null,
+      pollIntervalMinutes: CADENCES[i % CADENCES.length],
+      snoozeUntil: null,
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600000),
+      status: "active",
+      createdAt: new Date(Date.now() - (i + 1) * 3600000),
+      archivedAt: null,
+      marketplace: 1,
+    });
+
+    // A couple of past fires so the alert feed and the hit counters are not
+    // empty on first load.
+    if (i % 5 === 0 && product.priceCents) {
+      const was = Math.round(product.priceCents * 1.15);
+      const alertId = "alert-" + uuid();
+      database.alerts.set(alertId, {
+        id: alertId,
+        watchId,
+        userId,
+        marketplace: 1,
+        triggeredAt: new Date(Date.now() - (i + 2) * 7200000),
+        whatChanged: `Price dropped from $${(was / 100).toFixed(2)} to $${(
+          product.priceCents / 100
+        ).toFixed(2)}`,
+        deliveryStatus: "sent",
+      });
+    }
   });
 
   return userId;

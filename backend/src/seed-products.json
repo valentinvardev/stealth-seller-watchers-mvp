@@ -1,0 +1,108 @@
+[
+  {
+    "url": "https://www.walmart.com/ip/Musselman-s-Apple-Butter-28-oz-Jar/10291187",
+    "retailer": "walmart",
+    "title": "Musselman's Apple Butter 28 oz. Jar",
+    "image": "https://i5.walmartimages.com/seo/Musselman-s-Apple-Butter-28-oz-Jar_c986cb3c-113d-4da0-83c7-ed9160086ae6.e1532a29a5f9543dc459c00ecf24e137.jpeg",
+    "priceCents": 444
+  },
+  {
+    "url": "https://www.walmart.com/ip/BYRD-Purifying-Shampoo-Clear-Pump-Bottle-16-oz-All-Hair-Types/191709014",
+    "retailer": "walmart",
+    "title": "BYRD Purifying Shampoo, Clear Pump Bottle, 16 oz All Hair Types",
+    "image": "https://i5.walmartimages.com/seo/BYRD-Purifying-Shampoo-Clear-Pump-Bottle-16-oz-All-Hair-Types_6858fe61-caf9-4655-921c-cee718551c34.d3d399c2be9f9e7b0ed3dd53322b6edf.jpeg",
+    "priceCents": 1967
+  },
+  {
+    "url": "https://www.target.com/p/aphmau-mystery-squishy-figure-bakery/-/A-94992643",
+    "retailer": "target",
+    "title": "Aphmau Mystery Squishy Figure Bakery",
+    "image": "https://target.scene7.com/is/image/Target/GUEST_d6e8c2f4-fea9-4de8-8438-215d37eee1d4",
+    "priceCents": 599
+  },
+  {
+    "url": "https://www.homedepot.com/p/RYOBI-ONE-18V-Lithium-Ion-Cordless-Grass-Shear-and-Shrubber-Trimmer-Battery-and-Charger-Not-Included-P2900B/206485338",
+    "retailer": "homedepot",
+    "title": "RYOBI ONE+ 18V Lithium-Ion Cordless Grass Shear and Shrubber Trimmer",
+    "image": null,
+    "priceCents": 10805
+  },
+  {
+    "url": "https://www.homedepot.com/p/Andersen-Storm-Door-Black-Bump-Closer-Kit-42486/317248411",
+    "retailer": "homedepot",
+    "title": "Andersen Storm Door Black Bump Closer Kit 42486",
+    "image": null,
+    "priceCents": null,
+    "failed": true
+  },
+  {
+    "url": "https://us.jellycat.com/bashful-giraffe/",
+    "retailer": "jellycat",
+    "title": "Bashful Giraffe",
+    "image": "https://cdn11.bigcommerce.com/s-23s5gfmhr7/products/344/images/41635/BAS3GN__37481.1727975862.386.513.jpg?c=1",
+    "priceCents": 7500
+  },
+  {
+    "url": "https://us.jellycat.com/otto-sausage-dog/",
+    "retailer": "jellycat",
+    "title": "Otto Sausage Dog",
+    "image": "https://cdn11.bigcommerce.com/s-23s5gfmhr7/products/1059/images/48401/OT3SD__62145.1750801649.386.513.jpg?c=1",
+    "priceCents": 7500
+  },
+  {
+    "url": "https://us.jellycat.com/little-fox/",
+    "retailer": "jellycat",
+    "title": "Little Fox",
+    "image": "https://cdn11.bigcommerce.com/s-23s5gfmhr7/products/953/images/44302/L3F__10650.1727979363.386.513.jpg?c=1",
+    "priceCents": 7500
+  },
+  {
+    "url": "https://www.rhodeskin.com/products/pocket-blush-toasted-teddy",
+    "retailer": "shopify",
+    "title": "pocket blush toasted teddy",
+    "image": "http://www.rhodeskin.com/cdn/shop/files/mainimage-SQ-toastedteddy_480x480.png?v=1717624446",
+    "priceCents": 4500
+  },
+  {
+    "url": "https://www.onlynaturalpet.com/products/dr-marty-nature-s-blend-healthy-growth-freeze-dried-dog-food",
+    "retailer": "shopify",
+    "title": "Dr. Marty Nature’s Blend Healthy Growth Freeze Dried Dog Food",
+    "image": "http://www.onlynaturalpet.com/cdn/shop/files/ProductDr.MartyNature_sBlendHG6ozFront_1024x1024.jpg?v=1772236404",
+    "priceCents": 4900
+  },
+  {
+    "url": "https://creations.mattel.com/products/barbie-signature-birthday-wishes-fashion-doll-jjx78",
+    "retailer": "shopify",
+    "title": "Barbie Signature Birthday Wishes Fashion Doll",
+    "image": "http://creations.mattel.com/cdn/shop/files/33f1d1eff8b7dd24411e11cf12f9edabb3e8b5b4_1024x.jpg?v=1777055725",
+    "priceCents": 900
+  },
+  {
+    "url": "https://www.hobbylobby.com/fabric-sewing/fabric-stabilizer-interfacing/forcefield-fabric-protector-spray/p/81282677",
+    "retailer": "hobbylobby",
+    "title": "Forcefield Fabric Protector Spray",
+    "image": null,
+    "priceCents": null
+  },
+  {
+    "url": "https://www.kohls.com/product/prd-5530047/huda-beauty-liquid-matte-ultra-comfort-transfer-proof-lipstick.jsp",
+    "retailer": "kohls",
+    "title": "HUDA BEAUTY Liquid Matte Ultra-Comfort Transfer-proof Lipstick",
+    "image": "https://media.kohlsimg.com/is/image/kohls/5530047_Muse?wid=1000&hei=1000&op_sharpen=1",
+    "priceCents": 4900
+  },
+  {
+    "url": "https://www.nordstrom.com/s/jellycat-bashful-giraffe-stuffed-animal/4906558",
+    "retailer": "nordstrom",
+    "title": "Jellycat Bashful Giraffe Plushie",
+    "image": "https://n.nordstrommedia.com/it/9d1b1807-8aa3-4179-98fc-e1a913a023e8.jpeg",
+    "priceCents": 4000
+  },
+  {
+    "url": "https://www.gamestop.com/home/bedroom/throws-blankets/products/marvel-comics-oversized-fleece-sherpa-54-x-72-in-throw-blanket/20015189.html",
+    "retailer": "gamestop",
+    "title": "Marvel Comics Oversized Fleece Sherpa 54 x 72-in Throw Blanket",
+    "image": "\n        https://media.gamestop.com/i/gamestop/20015189/Marvel-Comics-Oversized-Fleece-Sherpa-54-x-72-in-Throw-Blanket",
+    "priceCents": 2101
+  }
+]
