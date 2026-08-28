@@ -14,6 +14,8 @@ const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const page = await (await browser.newContext({
     viewport: { width: 1440, height: 900 },
+    // 2x so 1px chrome (dot borders, inset lines) is actually judgeable
+    deviceScaleFactor: 2,
     // the app reads prefers-color-scheme; take the dark shots, Will reviews in dark
     colorScheme: "dark",
   })).newPage();
@@ -33,6 +35,11 @@ const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   await page.getByRole("tab", { name: "Manage" }).click();
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(OUT, "2-manage.png") });
+  // one row, cropped: the blinker's border chrome lives at 1px scale
+  await page
+    .locator('[role="button"]', { hasText: "BYRD" })
+    .first()
+    .screenshot({ path: path.join(OUT, "2b-row-zoom.png") });
 
   // second row = BYRD shampoo, the one from Will's screenshot
   const rows = page.locator('[role="button"]', { hasText: "BYRD" });
