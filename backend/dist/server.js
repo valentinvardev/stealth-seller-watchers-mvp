@@ -23883,21 +23883,21 @@ var seed_products_default = [
     url: "https://www.rhodeskin.com/products/pocket-blush-toasted-teddy",
     retailer: "shopify",
     title: "pocket blush toasted teddy",
-    image: "http://www.rhodeskin.com/cdn/shop/files/mainimage-SQ-toastedteddy_480x480.png?v=1717624446",
+    image: "https://www.rhodeskin.com/cdn/shop/files/mainimage-SQ-toastedteddy_480x480.png?v=1717624446",
     priceCents: 4500
   },
   {
     url: "https://www.onlynaturalpet.com/products/dr-marty-nature-s-blend-healthy-growth-freeze-dried-dog-food",
     retailer: "shopify",
     title: "Dr. Marty Nature\u2019s Blend Healthy Growth Freeze Dried Dog Food",
-    image: "http://www.onlynaturalpet.com/cdn/shop/files/ProductDr.MartyNature_sBlendHG6ozFront_1024x1024.jpg?v=1772236404",
+    image: "https://www.onlynaturalpet.com/cdn/shop/files/ProductDr.MartyNature_sBlendHG6ozFront_1024x1024.jpg?v=1772236404",
     priceCents: 4900
   },
   {
     url: "https://creations.mattel.com/products/barbie-signature-birthday-wishes-fashion-doll-jjx78",
     retailer: "shopify",
     title: "Barbie Signature Birthday Wishes Fashion Doll",
-    image: "http://creations.mattel.com/cdn/shop/files/33f1d1eff8b7dd24411e11cf12f9edabb3e8b5b4_1024x.jpg?v=1777055725",
+    image: "https://creations.mattel.com/cdn/shop/files/33f1d1eff8b7dd24411e11cf12f9edabb3e8b5b4_1024x.jpg?v=1777055725",
     priceCents: 900
   },
   {
@@ -24001,11 +24001,19 @@ function initializeDemo() {
   seed_products_default.forEach((product, i) => {
     const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
-    const priceHistory = scrapeFailed ? null : Array.from({ length: 12 }, (_, j) => {
-      if (j === 11) return product.priceCents;
-      const wobble = ((i * 7 + j * 13) % 9 - 4) / 100;
-      return Math.round(product.priceCents * (1 + wobble));
-    });
+    const priceHistory = scrapeFailed ? null : (() => {
+      const current = product.priceCents;
+      const firstStep = 3 + i % 3;
+      const secondStep = 7 + i % 4;
+      const hasTwoSteps = i % 2 === 0;
+      const earlier = i % 4 === 1 ? Math.round(current * 0.95) : Math.round(current * 1.08);
+      const middle = hasTwoSteps ? Math.round(current * 1.03) : earlier;
+      return Array.from({ length: 12 }, (_, j) => {
+        if (j < firstStep) return earlier;
+        if (j < secondStep) return middle;
+        return current;
+      });
+    })();
     database.targets.set(targetId, {
       id: targetId,
       targetType: "url",

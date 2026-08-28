@@ -103,16 +103,28 @@ export function initializeDemo() {
     const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
 
-    // 12 past checks of price history, deterministic (same wobble on every
-    // instance, ±4%) and ending on the real scraped price so the strip's
-    // endpoint always agrees with the row.
+    // 12 past checks of price history. Deterministic, and shaped like a real
+    // price: plateaus with one or two step changes, not per-check wobble — a
+    // ±4% zigzag made the dither sparkline read as a solid noise brick.
+    // Always ends on the real scraped price so the strip agrees with the row.
     const priceHistory = scrapeFailed
       ? null
-      : Array.from({ length: 12 }, (_, j) => {
-          if (j === 11) return product.priceCents as number;
-          const wobble = (((i * 7 + j * 13) % 9) - 4) / 100;
-          return Math.round((product.priceCents as number) * (1 + wobble));
-        });
+      : (() => {
+          const current = product.priceCents as number;
+          // one or two steps, at spots that vary per product
+          const firstStep = 3 + (i % 3); // 3..5
+          const secondStep = 7 + (i % 4); // 7..10
+          const hasTwoSteps = i % 2 === 0;
+          // most watched products drift down toward the target; every fourth
+          // one came from below, so a few strips rise instead
+          const earlier = i % 4 === 1 ? Math.round(current * 0.95) : Math.round(current * 1.08);
+          const middle = hasTwoSteps ? Math.round(current * 1.03) : earlier;
+          return Array.from({ length: 12 }, (_, j) => {
+            if (j < firstStep) return earlier;
+            if (j < secondStep) return middle;
+            return current;
+          });
+        })();
 
     database.targets.set(targetId, {
       id: targetId,
