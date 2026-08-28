@@ -42,8 +42,21 @@ if [ "$AFTER" != "0" ]; then
 fi
 
 echo "==> copying into $HERE/public"
-rm -rf "$HERE/public"
+# rm -rf fails here if anything is still serving public/ -- a local server run
+# earlier in the session holds the files open on Windows. The message is easy to
+# miss, so verify the copy landed rather than trusting the exit code alone.
+if ! rm -rf "$HERE/public"; then
+  echo "error: could not clear public/ -- stop anything serving it and retry" >&2
+  exit 1
+fi
 mkdir -p "$HERE/public"
 cp -r build/. "$HERE/public/"
 
-echo "done. public/ now holds the real v3 build."
+WANT=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' build/index.html | head -1)
+GOT=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' "$HERE/public/index.html" | head -1)
+if [ "$WANT" != "$GOT" ]; then
+  echo "error: public/ holds $GOT but the build produced $WANT" >&2
+  exit 1
+fi
+
+echo "done. public/ now holds the real v3 build ($GOT)."

@@ -1,1 +1,0 @@
-import{_ as u}from"./index-YqbyPIBN.js";function d(){return"dev"}function t(a,n,e){const r=u({queryKey:[d(),...a],queryFn:n,enabled:e==null?void 0:e.enabled});return{data:r.data??null,isLoading:r.isInitialLoading,error:r.error instanceof Error?r.error.message:null}}export{d as g,t as u};
