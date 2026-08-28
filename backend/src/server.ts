@@ -40,7 +40,20 @@ const publicDir = PUBLIC_CANDIDATES.find((p) => fs.existsSync(path.join(p, "inde
 
 if (publicDir) {
   console.log(`serving SPA from ${publicDir}`);
-  app.use(express.static(publicDir));
+  app.use(
+    express.static(publicDir, {
+      // Chunks are content-hashed, so they can cache forever; the HTML must
+      // revalidate on every navigation or a browser keeps the previous
+      // deploy's index.html and asks for chunks that no longer exist.
+      setHeaders: (res, filePath) => {
+        if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else {
+          res.setHeader("Cache-Control", "no-cache");
+        }
+      },
+    }),
+  );
 } else {
   console.warn(`no SPA build found; tried: ${PUBLIC_CANDIDATES.join(", ")}`);
 }
@@ -95,12 +108,21 @@ app.get("/api/auth/get-session", (req, res) => {
 
 // An unmatched /api path is a real miss, so answer JSON there -- returning the
 // SPA shell for an API call is what made the auth stub look like a signed-out
-// user. Everything else falls through to index.html for client-side routing.
+// user. A miss that LOOKS like a file (an old deploy's hashed chunk, a missing
+// image) must 404 too: falling back to index.html there hands the browser HTML
+// where it expected a module script, and the whole app dies on an opaque
+// MIME-type error. Only extensionless paths are client-side routes.
 app.use((req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Not found", path: req.originalUrl });
   }
-  if (publicDir) return res.sendFile(path.join(publicDir, "index.html"));
+  if (path.extname(req.path)) {
+    return res.status(404).type("text/plain").send("Not found");
+  }
+  if (publicDir) {
+    res.setHeader("Cache-Control", "no-cache");
+    return res.sendFile(path.join(publicDir, "index.html"));
+  }
   res.status(404).json({ error: "No SPA build available" });
 });
 

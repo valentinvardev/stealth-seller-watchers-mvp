@@ -29582,7 +29582,20 @@ var PUBLIC_CANDIDATES = [
 var publicDir = PUBLIC_CANDIDATES.find((p) => import_fs.default.existsSync(import_path.default.join(p, "index.html")));
 if (publicDir) {
   console.log(`serving SPA from ${publicDir}`);
-  app.use(import_express.default.static(publicDir));
+  app.use(
+    import_express.default.static(publicDir, {
+      // Chunks are content-hashed, so they can cache forever; the HTML must
+      // revalidate on every navigation or a browser keeps the previous
+      // deploy's index.html and asks for chunks that no longer exist.
+      setHeaders: (res, filePath) => {
+        if (filePath.includes(`${import_path.default.sep}assets${import_path.default.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else {
+          res.setHeader("Cache-Control", "no-cache");
+        }
+      }
+    })
+  );
 } else {
   console.warn(`no SPA build found; tried: ${PUBLIC_CANDIDATES.join(", ")}`);
 }
@@ -29627,7 +29640,13 @@ app.use((req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Not found", path: req.originalUrl });
   }
-  if (publicDir) return res.sendFile(import_path.default.join(publicDir, "index.html"));
+  if (import_path.default.extname(req.path)) {
+    return res.status(404).type("text/plain").send("Not found");
+  }
+  if (publicDir) {
+    res.setHeader("Cache-Control", "no-cache");
+    return res.sendFile(import_path.default.join(publicDir, "index.html"));
+  }
   res.status(404).json({ error: "No SPA build available" });
 });
 if (require.main === module) {
