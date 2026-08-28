@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import express from "express";
 import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -23,10 +25,25 @@ app.use(
 );
 app.use(express.json());
 
-// No static serving here on purpose: the deployed SPA is served straight from
-// the CDN (public/, see vercel.json) and locally it runs off the Vite dev
-// server with HMR. Express stays API-only, which also removes the __dirname
-// path juggling that kept breaking in the bundled function.
+// Serve the built SPA from this same process, so the deploy is one function
+// and there is no static/function routing split to get wrong.
+//
+// The bundler decides the on-disk layout, so resolve public/ by probing the
+// plausible roots instead of assuming one. Picking it once at startup means a
+// wrong guess shows up in the boot log rather than as mystery 404s.
+const PUBLIC_CANDIDATES = [
+  path.join(__dirname, "../../public"), // repo layout: backend/dist -> root
+  path.join(process.cwd(), "public"), // function invoked from the deploy root
+  path.join(__dirname, "../../../public"),
+];
+const publicDir = PUBLIC_CANDIDATES.find((p) => fs.existsSync(path.join(p, "index.html")));
+
+if (publicDir) {
+  console.log(`serving SPA from ${publicDir}`);
+  app.use(express.static(publicDir));
+} else {
+  console.warn(`no SPA build found; tried: ${PUBLIC_CANDIDATES.join(", ")}`);
+}
 
 // The real frontend's tRPC client posts to `${VITE_API_URL}/api/trpc`, so the
 // sandbox mounts there. /trpc stays as an alias for direct curl testing.
@@ -76,10 +93,15 @@ app.get("/api/auth/get-session", (req, res) => {
   res.json(SANDBOX_SESSION);
 });
 
-// Unknown API path: answer JSON, never HTML. The SPA fallback is handled by
-// the CDN rewrite, so anything reaching Express and not matching is a real miss.
+// An unmatched /api path is a real miss, so answer JSON there -- returning the
+// SPA shell for an API call is what made the auth stub look like a signed-out
+// user. Everything else falls through to index.html for client-side routing.
 app.use((req, res) => {
-  res.status(404).json({ error: "Not found", path: req.originalUrl });
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "Not found", path: req.originalUrl });
+  }
+  if (publicDir) return res.sendFile(path.join(publicDir, "index.html"));
+  res.status(404).json({ error: "No SPA build available" });
 });
 
 // Bind a port only when this file is run directly (`node dist/server.js`).
