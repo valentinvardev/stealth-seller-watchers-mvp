@@ -6,7 +6,9 @@
       "framework": "vite"
     },
     "backend": {
-      "root": "backend"
+      "root": "backend",
+      "runtime": "node",
+      "entrypoint": "dist/server.js"
     }
   },
   "rewrites": [
