@@ -41,7 +41,9 @@ export type Alert = {
   userId: string;
   marketplace: number;
   triggeredAt: Date;
-  whatChanged: string;
+  // producer-owned jsonb in the real backend; the frontend's alert feed reads
+  // {condition, before:{priceCents}, after:{priceCents}} out of it
+  whatChanged: unknown;
   deliveryStatus: "pending" | "sent" | "failed";
 };
 
@@ -157,9 +159,14 @@ export function initializeDemo() {
         userId,
         marketplace: 1,
         triggeredAt: new Date(anchor - (i + 2) * 2 * HOUR_MS),
-        whatChanged: `Price dropped from $${(was / 100).toFixed(2)} to $${(
-          product.priceCents / 100
-        ).toFixed(2)}`,
+        // structured like the real producer writes it, so the v3 alert feed
+        // renders the % chip and the before -> after prices instead of the
+        // "Alert" fallback it uses for shapes it can't read
+        whatChanged: {
+          condition: "price_drop",
+          before: { priceCents: was },
+          after: { priceCents: product.priceCents },
+        },
         deliveryStatus: "sent",
       });
     }

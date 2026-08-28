@@ -31,10 +31,16 @@ VITE_API_URL="$SENTINEL" npm run build
 echo "==> rewriting the API origin to window.location.origin"
 # Match the full sentinel host, not the bare word: rrweb ships an unrelated
 # "SCRIPT_PLACEHOLDER" literal that would otherwise look like a failed rewrite.
-BEFORE=$(grep -ro "PLACEHOLDER\.vercel\.app" build/assets | wc -l | tr -d ' ')
+#
+# The `|| true` matters: grep exits 1 on zero matches, and under `set -euo
+# pipefail` that killed the script SILENTLY right here -- after the rewrite,
+# before the copy -- leaving public/ stale while looking like a success. Zero
+# matches is a legitimate count, not an error.
+count_sentinel() { { grep -ro "PLACEHOLDER\.vercel\.app" build/assets || true; } | wc -l | tr -d ' '; }
+BEFORE=$(count_sentinel)
 find build/assets -name '*.js' -exec \
   perl -pi -e 's{"https://PLACEHOLDER\.vercel\.app}{window.location.origin+"}g' {} +
-AFTER=$(grep -ro "PLACEHOLDER\.vercel\.app" build/assets | wc -l | tr -d ' ')
+AFTER=$(count_sentinel)
 echo "    occurrences: $BEFORE -> $AFTER"
 if [ "$AFTER" != "0" ]; then
   echo "error: sentinel still present after rewrite" >&2

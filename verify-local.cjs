@@ -3,7 +3,7 @@
 // the deploy -- it exists so the assembly can be checked before pushing.
 const path = require("path");
 const express = require("express");
-const api = require("./api/[...path].js");
+const api = require("./api/index.js");
 
 const app = express();
 app.use("/api", (req, res) => { req.url = "/api" + req.url; api(req, res); });

@@ -219,9 +219,17 @@ const monitoringRouter = t.router({
     ),
 
   // sandbox-only: fires a synthetic alert so the feed can be demoed without
-  // waiting on a real poll. Not part of the production router.
+  // waiting on a real poll. Not part of the production router. Accepts the
+  // structured whatChanged shape the v3 feed renders; message is the legacy
+  // string fallback.
   simulateAlert: t.procedure
-    .input(z.object({ watchId: z.string(), message: z.string() }))
+    .input(
+      z.object({
+        watchId: z.string(),
+        whatChanged: z.record(z.unknown()).optional(),
+        message: z.string().optional(),
+      }),
+    )
     .mutation(({ input, ctx }) => {
       ownedWatchOrThrow(input.watchId, ctx.userId);
       const alert: Alert = {
@@ -230,7 +238,7 @@ const monitoringRouter = t.router({
         userId: ctx.userId,
         marketplace: ctx.marketplace,
         triggeredAt: new Date(),
-        whatChanged: input.message,
+        whatChanged: input.whatChanged ?? input.message ?? { condition: "price_change" },
         deliveryStatus: "sent",
       };
       database.alerts.set(alert.id, alert);
