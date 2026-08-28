@@ -66,7 +66,7 @@ function serializeWatch(w: Watch) {
       lastFailedAt: target?.lastFailedAt ?? null,
       currentPriceCents: target?.lastPriceCents ?? null,
       currentStock: target?.lastStockStatus ?? null,
-      priceHistory: target?.priceHistory ?? null,
+      checkHistory: target?.checkHistory ?? null,
     },
   };
 }

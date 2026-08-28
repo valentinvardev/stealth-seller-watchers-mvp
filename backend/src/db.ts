@@ -29,9 +29,10 @@ export type WatchTarget = {
   lastPolledAt: Date | null;
   lastPriceCents: number | null;
   lastStockStatus: string | null;
-  // price seen at each past check, oldest -> newest; feeds the dialog's
-  // "price across checks" strip (P2: history as the honest liveness signal)
-  priceHistory: number[] | null;
+  // the last N checks, oldest -> newest, each with when it ran and the price
+  // it saw. Feeds the dialog's "price across checks" chart and its hover
+  // tooltip (P2: history as the honest liveness signal, per check).
+  checkHistory: { at: Date; priceCents: number }[] | null;
   lastSnapshot: any;
   failureCount: number;
   lastFailedAt: Date | null;
@@ -107,7 +108,9 @@ export function initializeDemo() {
     // price: plateaus with one or two step changes, not per-check wobble — a
     // ±4% zigzag made the dither sparkline read as a solid noise brick.
     // Always ends on the real scraped price so the strip agrees with the row.
-    const priceHistory = scrapeFailed
+    const cadenceMs = CADENCES[i % CADENCES.length] * 60 * 1000;
+    const lastPolledAt = scrapeFailed ? null : new Date(anchor - (i + 1) * 900000);
+    const checkHistory = scrapeFailed
       ? null
       : (() => {
           const current = product.priceCents as number;
@@ -119,11 +122,11 @@ export function initializeDemo() {
           // one came from below, so a few strips rise instead
           const earlier = i % 4 === 1 ? Math.round(current * 0.95) : Math.round(current * 1.08);
           const middle = hasTwoSteps ? Math.round(current * 1.03) : earlier;
-          return Array.from({ length: 12 }, (_, j) => {
-            if (j < firstStep) return earlier;
-            if (j < secondStep) return middle;
-            return current;
-          });
+          // one check per cadence tick, the newest landing on lastPolledAt
+          return Array.from({ length: 12 }, (_, j) => ({
+            at: new Date((lastPolledAt as Date).getTime() - (11 - j) * cadenceMs),
+            priceCents: j < firstStep ? earlier : j < secondStep ? middle : current,
+          }));
         })();
 
     database.targets.set(targetId, {
@@ -137,9 +140,9 @@ export function initializeDemo() {
       // A page we could not read gets no successful poll and a failure stamp,
       // which is what drives the row's "can't read the page" state. Seeding it
       // honestly beats pretending every retailer scrapes cleanly.
-      lastPolledAt: scrapeFailed ? null : new Date(anchor - (i + 1) * 900000),
+      lastPolledAt,
       lastPriceCents: product.priceCents,
-      priceHistory,
+      checkHistory,
       lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
       lastSnapshot: {
         title: product.title,
@@ -231,7 +234,7 @@ export function findOrCreateTarget(
     lastPolledAt: null,
     lastPriceCents: null,
     lastStockStatus: "unknown",
-    priceHistory: null,
+    checkHistory: null,
     lastSnapshot: null,
     failureCount: 0,
     lastFailedAt: null,

@@ -24001,18 +24001,19 @@ function initializeDemo() {
   seed_products_default.forEach((product, i) => {
     const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
-    const priceHistory = scrapeFailed ? null : (() => {
+    const cadenceMs = CADENCES[i % CADENCES.length] * 60 * 1e3;
+    const lastPolledAt = scrapeFailed ? null : new Date(anchor - (i + 1) * 9e5);
+    const checkHistory = scrapeFailed ? null : (() => {
       const current = product.priceCents;
       const firstStep = 3 + i % 3;
       const secondStep = 7 + i % 4;
       const hasTwoSteps = i % 2 === 0;
       const earlier = i % 4 === 1 ? Math.round(current * 0.95) : Math.round(current * 1.08);
       const middle = hasTwoSteps ? Math.round(current * 1.03) : earlier;
-      return Array.from({ length: 12 }, (_, j) => {
-        if (j < firstStep) return earlier;
-        if (j < secondStep) return middle;
-        return current;
-      });
+      return Array.from({ length: 12 }, (_, j) => ({
+        at: new Date(lastPolledAt.getTime() - (11 - j) * cadenceMs),
+        priceCents: j < firstStep ? earlier : j < secondStep ? middle : current
+      }));
     })();
     database.targets.set(targetId, {
       id: targetId,
@@ -24025,9 +24026,9 @@ function initializeDemo() {
       // A page we could not read gets no successful poll and a failure stamp,
       // which is what drives the row's "can't read the page" state. Seeding it
       // honestly beats pretending every retailer scrapes cleanly.
-      lastPolledAt: scrapeFailed ? null : new Date(anchor - (i + 1) * 9e5),
+      lastPolledAt,
       lastPriceCents: product.priceCents,
-      priceHistory,
+      checkHistory,
       lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
       lastSnapshot: {
         title: product.title,
@@ -24101,7 +24102,7 @@ function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl) {
     lastPolledAt: null,
     lastPriceCents: null,
     lastStockStatus: "unknown",
-    priceHistory: null,
+    checkHistory: null,
     lastSnapshot: null,
     failureCount: 0,
     lastFailedAt: null,
@@ -29404,7 +29405,7 @@ function serializeWatch(w) {
       lastFailedAt: target?.lastFailedAt ?? null,
       currentPriceCents: target?.lastPriceCents ?? null,
       currentStock: target?.lastStockStatus ?? null,
-      priceHistory: target?.priceHistory ?? null
+      checkHistory: target?.checkHistory ?? null
     }
   };
 }

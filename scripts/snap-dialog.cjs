@@ -41,6 +41,17 @@ const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   await page.waitForTimeout(1200);
   await page.screenshot({ path: path.join(OUT, "3-dialog.png") });
 
+  // hover the chart about two thirds across and capture the tooltip
+  const chart = page.getByText("Price across checks").locator("..").locator("..").locator("div").last();
+  const box = await chart.boundingBox();
+  if (box) {
+    await page.mouse.move(box.x + box.width * 0.66, box.y + box.height * 0.5, { steps: 8 });
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: path.join(OUT, "4-dialog-hover.png") });
+  } else {
+    console.log("chart box not found, skipped hover shot");
+  }
+
   console.log("shots in", OUT);
   console.log(errors.length ? `ERRORS:\n${errors.join("\n")}` : "no console errors");
   await browser.close();

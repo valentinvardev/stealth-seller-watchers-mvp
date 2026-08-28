@@ -74,8 +74,20 @@ fi
 # On a build change, wipe the origin's storage before the app boots. Keyed to
 # the entry hash; the app's CSP allows 'unsafe-inline', so this is valid.
 BUILD_KEY=$(basename "$GOT" .js)
-GUARD="<script>/*sandbox-storage-guard*/try{var k='__sandbox_build';if(localStorage.getItem(k)!=='$BUILD_KEY'){localStorage.clear();sessionStorage.clear();localStorage.setItem(k,'$BUILD_KEY');}}catch(e){}</script>"
-perl -pi -e "s{<head>}{<head>$(printf '%s' "$GUARD" | sed 's/[\\&{}]/\\\\&/g')}" "$HERE/public/index.html"
+# Injected with node, not perl/sed: escaping braces and quotes through two
+# shell layers once left literal backslashes in the script and a silent
+# syntax error -- the guard parsed as nothing and never ran. Node also
+# re-parses the injected script so a broken guard fails the build here.
+BUILD_KEY="$BUILD_KEY" node -e '
+const fs = require("fs");
+const file = process.argv[1];
+const key = process.env.BUILD_KEY;
+const guard = "<script>/*sandbox-storage-guard*/try{var k=\"__sandbox_build\";if(localStorage.getItem(k)!==\"" + key + "\"){localStorage.clear();sessionStorage.clear();localStorage.setItem(k,\"" + key + "\");}}catch(e){}</script>";
+new Function(guard.replace(/^<script>|<\/script>$/g, "")); // throws on a syntax error
+let html = fs.readFileSync(file, "utf8").replace(/<script>\/\*sandbox-storage-guard\*\/[\s\S]*?<\/script>/, "");
+if (!html.includes("<head>")) throw new Error("no <head> in index.html");
+fs.writeFileSync(file, html.replace("<head>", "<head>" + guard));
+' "$HERE/public/index.html"
 grep -q "sandbox-storage-guard" "$HERE/public/index.html" || { echo "error: storage guard not injected" >&2; exit 1; }
 
 echo "done. public/ now holds the real v3 build ($GOT, storage guard keyed to $BUILD_KEY)."
