@@ -1,31 +1,41 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "backend/package.json",
-      "use": "@vercel/node"
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite"
     },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+    "backend": {
+      "root": "backend"
     }
-  ],
-  "routes": [
-    {
-      "src": "/trpc/(.*)",
-      "dest": "backend/dist/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/dist/index.html"
-    }
-  ],
+  },
   "env": {
     "FIRECRAWL_API_KEY": "@firecrawl_api_key",
     "OPENROUTER_API_KEY": "@openrouter_api_key",
-    "VITE_API_URL": "@vite_api_url"
-  }
+    "VITE_API_URL": "@vite_api_url",
+    "NPM_TOKEN": "@npm_token"
+  },
+  "rewrites": [
+    {
+      "source": "/trpc(/.*)?",
+      "destination": {
+        "type": "service",
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/health",
+      "destination": {
+        "type": "service",
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "frontend"
+      }
+    }
+  ]
 }
