@@ -22,38 +22,70 @@ A standalone MVP of the Watchers feature for Stealth Seller. Monitor Amazon prod
 - **Runtime**: Node.js with TypeScript
 
 ### Frontend
+- **Location**: `stealth-seller-frontend` (dev branch)
 - **Framework**: React 18 + Vite
-- **Styling**: Tailwind CSS + Radix UI primitives
+- **Styling**: Tailwind CSS + Radix UI primitives + Stealth Seller design system
 - **Client**: tRPC + TanStack Query
 - **TypeScript**: Strict mode for type safety
+- **Note**: This repo provides backend API only. Use frontend from stealth-seller-frontend/dev
 
 ## Quick Start
 
 ### Prerequisites
 - Node.js >= 18
-- pnpm (or npm)
+- npm or pnpm
+- GitHub token (for stealth-seller-frontend private packages)
 
-### Installation
-
-```bash
-# Install dependencies for the entire monorepo
-pnpm install
-
-# Or install each workspace separately
-cd backend && pnpm install
-cd ../frontend && pnpm install
-```
-
-### Development
+### Step 1: Backend Setup (This Repo)
 
 ```bash
-# Start both backend and frontend concurrently
-pnpm dev
-
-# Or start them separately
-pnpm backend:dev  # Backend at http://localhost:3000
-pnpm frontend:dev # Frontend at http://localhost:5173
+cd stealth-seller-watchers-mvp/backend
+npm install
+npm run dev
+# Runs on http://localhost:3000
 ```
+
+### Step 2: Frontend Setup (Use Dev Branch)
+
+```bash
+# Setup GitHub token first (see GITHUB_TOKEN_SETUP.md)
+cd stealth-seller-frontend
+git checkout dev
+npm install --legacy-peer-deps
+npm run dev
+# Runs on http://localhost:5173
+```
+
+### Step 3: Visit the App
+
+Open http://localhost:5173 in your browser
+
+**Expected:**
+- Beautiful Watchers dashboard matching the Stealth Seller design
+- Ability to create watches
+- Alert history
+- Watch management
+
+---
+
+## Architecture
+
+**Backend** (This Repo)
+- Express + tRPC API
+- Firecrawl integration for URL scraping
+- Type-safe procedures
+- Runs on `http://localhost:3000`
+
+**Frontend** (stealth-seller-frontend/dev)
+- React + Vite application
+- Stealth Seller design system
+- Communicates with backend via tRPC
+- Runs on `http://localhost:5173`
+
+**Communication**
+- Frontend proxies `/trpc` requests to backend
+- Type-safe tRPC ensures consistency
+- Environment variable `VITE_API_URL` controls backend URL
 
 The frontend will proxy tRPC calls to the backend.
 
