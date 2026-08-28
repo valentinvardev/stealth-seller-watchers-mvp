@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { initializeDemo } from "./db";
 import { router } from "./trpc";
@@ -14,6 +15,10 @@ console.log(`Demo user ID: ${demoUserId}`);
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve frontend static files
+const frontendPath = path.join(__dirname, "../../frontend/dist");
+app.use(express.static(frontendPath));
 
 // tRPC endpoint
 app.use(
@@ -32,8 +37,13 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Fallback to index.html for React Router
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Watchers backend running on http://localhost:${PORT}`);
+  console.log(`Watchers running on http://localhost:${PORT}`);
   console.log(`tRPC endpoint: http://localhost:${PORT}/trpc`);
 });
