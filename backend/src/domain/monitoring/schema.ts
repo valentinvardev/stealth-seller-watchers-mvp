@@ -89,7 +89,7 @@ export const CreateUrlWatchSchema = z
     path: ["reason"],
   });
 
-export const CreateWatchSchema = z.discriminatedUnion("targetType", [
+export const CreateWatchSchema = z.union([
   CreateAsinWatchSchema,
   CreateUrlWatchSchema,
 ]);

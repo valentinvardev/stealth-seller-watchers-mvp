@@ -45,11 +45,11 @@ export async function scrapeUrl(url: string): Promise<FirecrawlScrapedData> {
       };
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as any;
     return {
-      success: data.success,
-      data: data.data,
-      error: data.error,
+      success: data?.success ?? false,
+      data: data?.data,
+      error: data?.error,
     };
   } catch (error) {
     console.error("Firecrawl scrape error:", error);
