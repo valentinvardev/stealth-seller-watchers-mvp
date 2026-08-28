@@ -23984,8 +23984,10 @@ var database = {
   alerts: /* @__PURE__ */ new Map(),
   users: /* @__PURE__ */ new Map()
 };
+var HOUR_MS = 60 * 60 * 1e3;
+var anchor = Math.floor(Date.now() / HOUR_MS) * HOUR_MS;
 function initializeDemo() {
-  const userId = "demo-user-" + v4_default();
+  const userId = "demo-user-sandbox";
   database.users.set(userId, {
     id: userId,
     watchCreditsGrant: 100,
@@ -23997,7 +23999,7 @@ function initializeDemo() {
   });
   const CADENCES = [120, 180, 360, 1440];
   seed_products_default.forEach((product, i) => {
-    const targetId = "target-" + v4_default();
+    const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
     database.targets.set(targetId, {
       id: targetId,
@@ -24006,11 +24008,11 @@ function initializeDemo() {
       marketplace: 1,
       normalizedUrl: product.url,
       pollIntervalMinutes: CADENCES[i % CADENCES.length],
-      nextPollAt: new Date(Date.now() + 36e5),
+      nextPollAt: new Date(anchor + HOUR_MS),
       // A page we could not read gets no successful poll and a failure stamp,
       // which is what drives the row's "can't read the page" state. Seeding it
       // honestly beats pretending every retailer scrapes cleanly.
-      lastPolledAt: scrapeFailed ? null : new Date(Date.now() - (i + 1) * 9e5),
+      lastPolledAt: scrapeFailed ? null : new Date(anchor - (i + 1) * 9e5),
       lastPriceCents: product.priceCents,
       lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
       lastSnapshot: {
@@ -24020,11 +24022,11 @@ function initializeDemo() {
         stockStatus: scrapeFailed ? "unknown" : "in_stock"
       },
       failureCount: scrapeFailed ? 3 : 0,
-      lastFailedAt: scrapeFailed ? new Date(Date.now() - 36e5) : null,
+      lastFailedAt: scrapeFailed ? new Date(anchor - HOUR_MS) : null,
       pausedUntil: null
     });
     const isPriceWatch = i % 3 !== 2;
-    const watchId = "watch-" + v4_default();
+    const watchId = `watch-seed-${i}`;
     database.watches.set(watchId, {
       id: watchId,
       userId,
@@ -24035,21 +24037,21 @@ function initializeDemo() {
       reason: null,
       pollIntervalMinutes: CADENCES[i % CADENCES.length],
       snoozeUntil: null,
-      expiresAt: new Date(Date.now() + 30 * 24 * 36e5),
+      expiresAt: new Date(anchor + 30 * 24 * HOUR_MS),
       status: "active",
-      createdAt: new Date(Date.now() - (i + 1) * 36e5),
+      createdAt: new Date(anchor - (i + 1) * HOUR_MS),
       archivedAt: null,
       marketplace: 1
     });
     if (i % 5 === 0 && product.priceCents) {
       const was = Math.round(product.priceCents * 1.15);
-      const alertId = "alert-" + v4_default();
+      const alertId = `alert-seed-${i}`;
       database.alerts.set(alertId, {
         id: alertId,
         watchId,
         userId,
         marketplace: 1,
-        triggeredAt: new Date(Date.now() - (i + 2) * 72e5),
+        triggeredAt: new Date(anchor - (i + 2) * 2 * HOUR_MS),
         whatChanged: `Price dropped from $${(was / 100).toFixed(2)} to $${(product.priceCents / 100).toFixed(2)}`,
         deliveryStatus: "sent"
       });

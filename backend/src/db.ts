@@ -63,9 +63,22 @@ export const database = {
   users: new Map<string, User>(),
 };
 
-// Initialize demo user
+// Every seeded id and timestamp here is deterministic, and that is the point.
+//
+// This runs per serverless instance, and Vercel keeps several alive at once. A
+// random id per instance meant the same browser got a different user from one
+// request to the next, which the frontend reads as an account switch -- it
+// re-identifies the session and refetches, which is what shows up as the page
+// reloading on its own.
+//
+// Fixed ids make every instance answer identically. Timestamps are anchored to
+// the top of the hour for the same reason: relative to now, so "checked 2h ago"
+// stays true, but equal across instances within the hour.
+const HOUR_MS = 60 * 60 * 1000;
+const anchor = Math.floor(Date.now() / HOUR_MS) * HOUR_MS;
+
 export function initializeDemo() {
-  const userId = "demo-user-" + uuid();
+  const userId = "demo-user-sandbox";
   database.users.set(userId, {
     id: userId,
     watchCreditsGrant: 100,
@@ -82,7 +95,7 @@ export function initializeDemo() {
   const CADENCES: Watch["pollIntervalMinutes"][] = [120, 180, 360, 1440];
 
   seedProducts.forEach((product, i) => {
-    const targetId = "target-" + uuid();
+    const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
 
     database.targets.set(targetId, {
@@ -92,11 +105,11 @@ export function initializeDemo() {
       marketplace: 1,
       normalizedUrl: product.url,
       pollIntervalMinutes: CADENCES[i % CADENCES.length],
-      nextPollAt: new Date(Date.now() + 3600000),
+      nextPollAt: new Date(anchor + HOUR_MS),
       // A page we could not read gets no successful poll and a failure stamp,
       // which is what drives the row's "can't read the page" state. Seeding it
       // honestly beats pretending every retailer scrapes cleanly.
-      lastPolledAt: scrapeFailed ? null : new Date(Date.now() - (i + 1) * 900000),
+      lastPolledAt: scrapeFailed ? null : new Date(anchor - (i + 1) * 900000),
       lastPriceCents: product.priceCents,
       lastStockStatus: scrapeFailed ? "unknown" : "in_stock",
       lastSnapshot: {
@@ -106,7 +119,7 @@ export function initializeDemo() {
         stockStatus: scrapeFailed ? "unknown" : "in_stock",
       },
       failureCount: scrapeFailed ? 3 : 0,
-      lastFailedAt: scrapeFailed ? new Date(Date.now() - 3600000) : null,
+      lastFailedAt: scrapeFailed ? new Date(anchor - HOUR_MS) : null,
       pausedUntil: null,
     });
 
@@ -114,7 +127,7 @@ export function initializeDemo() {
     // put the price target ~10% under the current price so it reads as a real
     // goal rather than an arbitrary number.
     const isPriceWatch = i % 3 !== 2;
-    const watchId = "watch-" + uuid();
+    const watchId = `watch-seed-${i}`;
     database.watches.set(watchId, {
       id: watchId,
       userId,
@@ -126,9 +139,9 @@ export function initializeDemo() {
       reason: null,
       pollIntervalMinutes: CADENCES[i % CADENCES.length],
       snoozeUntil: null,
-      expiresAt: new Date(Date.now() + 30 * 24 * 3600000),
+      expiresAt: new Date(anchor + 30 * 24 * HOUR_MS),
       status: "active",
-      createdAt: new Date(Date.now() - (i + 1) * 3600000),
+      createdAt: new Date(anchor - (i + 1) * HOUR_MS),
       archivedAt: null,
       marketplace: 1,
     });
@@ -137,13 +150,13 @@ export function initializeDemo() {
     // empty on first load.
     if (i % 5 === 0 && product.priceCents) {
       const was = Math.round(product.priceCents * 1.15);
-      const alertId = "alert-" + uuid();
+      const alertId = `alert-seed-${i}`;
       database.alerts.set(alertId, {
         id: alertId,
         watchId,
         userId,
         marketplace: 1,
-        triggeredAt: new Date(Date.now() - (i + 2) * 7200000),
+        triggeredAt: new Date(anchor - (i + 2) * 2 * HOUR_MS),
         whatChanged: `Price dropped from $${(was / 100).toFixed(2)} to $${(
           product.priceCents / 100
         ).toFixed(2)}`,
