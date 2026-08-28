@@ -1,5 +1,22 @@
 {
   "version": 2,
-  "buildCommand": "cd backend && npm install --production && cd ../frontend && npm install --production --legacy-peer-deps",
-  "outputDirectory": "backend"
+  "builds": [
+    {
+      "src": "backend/dist/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "backend/dist/**"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/trpc/(.*)",
+      "dest": "backend/dist/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "backend/dist/server.js"
+    }
+  ]
 }
