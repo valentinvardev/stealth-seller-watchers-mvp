@@ -67,4 +67,15 @@ if [ "$WANT" != "$GOT" ]; then
   exit 1
 fi
 
-echo "done. public/ now holds the real v3 build ($GOT)."
+# Storage guard: the sandbox redeploys many times a day and browser state
+# written under one build (legacy-bridge user blobs, half-written keys from a
+# crashed tab) can throw inside a provider on the next one -- an error only
+# clients with history ever see, which is why headless probes stay green.
+# On a build change, wipe the origin's storage before the app boots. Keyed to
+# the entry hash; the app's CSP allows 'unsafe-inline', so this is valid.
+BUILD_KEY=$(basename "$GOT" .js)
+GUARD="<script>/*sandbox-storage-guard*/try{var k='__sandbox_build';if(localStorage.getItem(k)!=='$BUILD_KEY'){localStorage.clear();sessionStorage.clear();localStorage.setItem(k,'$BUILD_KEY');}}catch(e){}</script>"
+perl -pi -e "s{<head>}{<head>$(printf '%s' "$GUARD" | sed 's/[\\&{}]/\\\\&/g')}" "$HERE/public/index.html"
+grep -q "sandbox-storage-guard" "$HERE/public/index.html" || { echo "error: storage guard not injected" >&2; exit 1; }
+
+echo "done. public/ now holds the real v3 build ($GOT, storage guard keyed to $BUILD_KEY)."
