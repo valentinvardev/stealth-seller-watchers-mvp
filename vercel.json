@@ -1,15 +1,31 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "vite",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/trpc/:path*",
-      "destination": "http://localhost:3000/trpc/:path*"
+      "src": "backend/package.json",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/trpc/(.*)",
+      "dest": "backend/dist/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/dist/index.html"
     }
   ],
   "env": {
+    "FIRECRAWL_API_KEY": "@firecrawl_api_key",
+    "OPENROUTER_API_KEY": "@openrouter_api_key",
     "VITE_API_URL": "@vite_api_url"
   }
 }
