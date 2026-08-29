@@ -1,5 +1,6 @@
 import seedProducts from "./seed-products.json";
 import { v4 as uuid } from "uuid";
+import { initializeOverviewDemo } from "./overview-seed";
 
 export type Watch = {
   id: string;
@@ -192,15 +193,19 @@ export function initializeDemo() {
         // structured like the real producer writes it, so the v3 alert feed
         // renders the % chip and the before -> after prices instead of the
         // "Alert" fallback it uses for shapes it can't read
+        // the third fire is a window that closed: it alerted below today's
+        // price, so the feed reads it as "price back up" and the tile as gone
         whatChanged: {
           condition: "price_drop",
           before: { priceCents: was },
-          after: { priceCents: product.priceCents },
+          after: { priceCents: i === 10 ? Math.round(product.priceCents * 0.92) : product.priceCents },
         },
         deliveryStatus: "sent",
       });
     }
   });
+
+  initializeOverviewDemo(userId);
 
   return userId;
 }

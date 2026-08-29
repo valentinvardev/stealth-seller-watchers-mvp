@@ -1,19 +1,22 @@
-import { initTRPC, TRPCError } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { v4 as uuid } from "uuid";
-import superjson from "superjson";
 import { database, findOrCreateTarget } from "./db";
 import type { Watch, Alert } from "./db";
 
-interface Context {
-  userId: string;
-  marketplace: number;
-}
-
-// superjson: the real frontend's tRPC client is configured with it, so the
-// sandbox backend has to match or Date fields arrive as strings and the
-// watchers page's formatRelative() calls blow up.
-const t = initTRPC.context<Context>().create({ transformer: superjson });
+import { t } from "./t";
+import {
+  accountExtras,
+  billingRouter,
+  bookmarksRouter,
+  buyboxRouter,
+  calculatorRouter,
+  foldersRouter,
+  notificationsRouter,
+  sellersRouter,
+  shellRouters,
+  watchlistRouter,
+} from "./overview-routers";
 
 const PollIntervalEnum = z.union([z.literal(120), z.literal(180), z.literal(360), z.literal(1440)]);
 
@@ -255,7 +258,7 @@ const accountRouter = t.router({
   getMe: t.procedure.query(({ ctx }) => ({
     id: ctx.userId,
     email: "claude@stealthseller.co",
-    fullName: "Watchers Sandbox",
+    fullName: "Will Sandbox",
     type: "admin",
     country: "US",
     preferredZipcode: "10001",
@@ -275,11 +278,21 @@ const accountRouter = t.router({
     lastActive: new Date(),
     createdAt: new Date(Date.now() - 90 * 24 * 3600000),
   })),
+  ...accountExtras,
 });
 
 export const router = t.router({
   monitoring: monitoringRouter,
   account: accountRouter,
+  watchlist: watchlistRouter,
+  sellers: sellersRouter,
+  bookmarks: bookmarksRouter,
+  folders: foldersRouter,
+  buybox: buyboxRouter,
+  calculator: calculatorRouter,
+  billing: billingRouter,
+  notifications: notificationsRouter,
+  ...shellRouters,
 });
 
 export type AppRouter = typeof router;

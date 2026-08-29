@@ -23977,6 +23977,267 @@ function v4(options, buf, offset) {
 }
 var v4_default = v4;
 
+// src/overview-seed.ts
+var HOUR_MS = 60 * 60 * 1e3;
+var DAY_MS = 24 * HOUR_MS;
+var anchor = Math.floor(Date.now() / HOUR_MS) * HOUR_MS;
+var dayKey = (offsetDays) => new Date(anchor - offsetDays * DAY_MS).toISOString().slice(0, 10);
+var overview = {
+  sellers: [],
+  products: [],
+  folders: [],
+  items: [],
+  // product ids the user opened; the feed's unread state
+  readIds: /* @__PURE__ */ new Set(),
+  // asin -> today's buy box in cents; two rows deliberately differ from the
+  // snapshot so "buy list moved" has something to say
+  liveBuyBox: /* @__PURE__ */ new Map(),
+  notifications: []
+};
+var SELLER_NAMES = [
+  "Toy Vault Deals",
+  "BrickHouse Goods",
+  "Coastal Resale",
+  "Midwest Flip Co",
+  "PrimeTime Finds",
+  "Sunbelt Surplus",
+  "Northline Trading",
+  "Bargain Barn Co",
+  "Peak Season Goods",
+  "Redwood Resale",
+  "Lakeshore Liquidators",
+  "Harbor Deals",
+  "Quick Cart Traders",
+  "Blue Ridge Bargains",
+  "Golden State Flips",
+  "Evergreen Stock",
+  "Metro Pallet Co"
+];
+var SELLER_WEIGHT = [1, 0.7, 0.5, 0.25, 0, 0.4, 0.35, 0.3, 0.3, 0.2, 0.2, 0.15, 0.15, 0.1, 0.3, 0.2, 0.1];
+var QUIET_INDEX = 4;
+var PAUSED_FROM = 14;
+var DAY_BASE = [1, 2, 1, 3, 2, 3, 2, 4, 3, 4, 3, 5, 4, 5];
+var UNREAD = [5, 3, 2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var EXTRA_TITLES = [
+  "Fisher-Price Laugh & Learn Sit & Steer Driver Car Activity Center",
+  "IRIS USA Board Game Storage Containers, 10-Pack, Slim - Clear",
+  "Melissa & Doug Wooden Building Blocks Set - 100 Blocks",
+  "LEGO Classic Medium Creative Brick Box 10696",
+  "Crayola Inspiration Art Case Coloring Set, 140 Pieces"
+];
+function initializeOverviewDemo(userId) {
+  void userId;
+  overview.sellers = SELLER_NAMES.map((name, index) => {
+    const isPaused = index >= PAUSED_FROM;
+    const isQuiet = index === QUIET_INDEX;
+    const weight = SELLER_WEIGHT[index];
+    const fbmShare = index % 3 === 2 ? 0.7 : 0.25;
+    const postingActivity = DAY_BASE.map((base, dayIndex) => {
+      const productCount = isQuiet ? 0 : Math.round(base * weight);
+      const fbmCount = Math.round(productCount * fbmShare);
+      const fbaCount = productCount - fbmCount;
+      const dominantType = productCount === 0 ? "none" : fbaCount === 0 ? "fbm" : fbmCount === 0 ? "fba" : fbaCount >= fbmCount ? "fba" : "mixed";
+      return { date: dayKey(13 - dayIndex), productCount, fbaCount, fbmCount, dominantType };
+    });
+    const totalPosted = postingActivity.reduce((sum, period) => sum + period.productCount, 0);
+    return {
+      id: `user-seller-${index}`,
+      sellerDbId: `seller-v2-${index}`,
+      sellerId: `A${(1e12 + index * 7919).toString(36).toUpperCase().slice(0, 13)}`,
+      sellerName: name,
+      nickName: null,
+      status: isPaused ? "P" : "A",
+      createdAt: new Date(anchor - (60 + index * 3) * DAY_MS),
+      lastTimePosted: isQuiet ? new Date(anchor - 16 * DAY_MS) : isPaused ? new Date(anchor - (5 + index) * DAY_MS) : new Date(anchor - (2 + index * 3) * HOUR_MS),
+      totalSavedProducts: [4, 3, 2, 1, 0, 2, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0][index],
+      totalUnreadProducts: UNREAD[index],
+      totalPostedSinceMonitoring: totalPosted * 6,
+      postingActivity,
+      isBookmarked: index < 2,
+      tags: index % 4 === 0 ? ["toys"] : index % 4 === 1 ? ["home"] : [],
+      rating: isQuiet ? null : 96 + index % 4,
+      ratingCount: isQuiet ? null : 120 + index * 37
+    };
+  });
+  const owners = [];
+  const remaining = [...UNREAD];
+  while (remaining.some((count) => count > 0)) {
+    remaining.forEach((count, sellerIndex) => {
+      if (count > 0) {
+        owners.push(sellerIndex);
+        remaining[sellerIndex] -= 1;
+      }
+    });
+  }
+  const retailer = seed_products_default.filter((product) => !product.failed && product.priceCents != null);
+  const pool = [
+    // trimmed: one scraped url carries leading whitespace, and the frontend
+    // only passes an image through untouched when it starts with http
+    ...retailer.map((product) => ({
+      title: product.title,
+      image: product.image?.trim() || null,
+      priceCents: product.priceCents
+    })),
+    ...EXTRA_TITLES.map((title, index) => ({ title, image: null, priceCents: [3499, 4250, 1999, 3497, 2299][index] }))
+  ];
+  const newestFirst = [12, 8, 3, 11, 1, 6, 2, 9, 7, 4, 13, 14, 10, 0, 5, 15, 16, 17, 18, 19].filter(
+    (index) => index < pool.length
+  );
+  const positionOf = new Map(newestFirst.map((index, position) => [index, position]));
+  overview.products = pool.map((product, index) => {
+    const position = positionOf.get(index) ?? index;
+    const isNew = position < owners.length;
+    const sellerIndex = isNew ? owners[position] : index * 5 % PAUSED_FROM;
+    const seller = overview.sellers[sellerIndex];
+    const buyBox = Math.round(product.priceCents * 2.1);
+    return {
+      id: `product-seed-${index}`,
+      title: product.title,
+      productId: `B0SS${String(index).padStart(6, "0")}`,
+      sellerDbId: seller.sellerDbId,
+      sellerName: seller.sellerName,
+      images: product.image ? [product.image] : [],
+      storefrontPrice: buyBox,
+      buyBoxPrice: buyBox,
+      salesRank: 900 + index * 1373 % 12e3,
+      monthlySales: 60 + index * 233 % 1100,
+      isFBA: index % 3 !== 1,
+      isFBM: index % 3 === 1,
+      firstSeenAt: new Date(anchor - (1 + position) * 2 * HOUR_MS),
+      isNew,
+      brand: product.title.split(" ")[0],
+      category: index % 2 === 0 ? "Toys & Games" : "Home & Kitchen",
+      rating: 4.2 + index % 7 / 10,
+      ratingCount: 300 + index * 41,
+      offerFBACount: 3 + index % 6,
+      offerFBMCount: index % 4,
+      isOfferAmazon: index % 5 === 0,
+      isBuyBoxFBA: index % 3 !== 1,
+      isBuyBoxAmazon: index % 5 === 0
+    };
+  });
+  overview.folders = [
+    { id: "folder-q4-toys", name: "Q4 Toys", defaultFulfillment: "fba", position: 0 },
+    { id: "folder-clearance", name: "Clearance run", defaultFulfillment: "fba", position: 1 },
+    { id: "folder-grocery", name: "Grocery", defaultFulfillment: "fbm", position: 2 }
+  ];
+  const folderOf = (index) => index < 6 ? "folder-q4-toys" : index < 11 ? "folder-clearance" : "folder-grocery";
+  overview.items = retailer.slice(0, 14).map((product, index) => {
+    const asin = `B0SS${String(index).padStart(6, "0")}`;
+    const sellPrice = Math.round(product.priceCents * 2.1);
+    const isLoser = index % 5 === 4 || sellPrice < 1200;
+    const buyCost = Math.round(sellPrice * (isLoser ? 0.9 : 0.55));
+    const gating = index === 3 ? {
+      gatingStatus: "needs_ungating",
+      gatingCheckedAt: new Date(anchor - 5 * HOUR_MS),
+      gatingGateType: "brand",
+      gatingApplyUrl: "https://sellercentral.amazon.com/hz/approvalrequest"
+    } : index === 7 ? {
+      gatingStatus: "approved",
+      gatingCheckedAt: new Date(anchor - 3 * HOUR_MS),
+      gatingGateType: null,
+      gatingApplyUrl: null
+    } : index < 10 ? { gatingStatus: "approved", gatingCheckedAt: new Date(anchor - (3 + index) * DAY_MS), gatingGateType: null, gatingApplyUrl: null } : { gatingStatus: null, gatingCheckedAt: null, gatingGateType: null, gatingApplyUrl: null };
+    return {
+      id: `folder-item-${index}`,
+      folderId: folderOf(index),
+      productId: `product-row-${index}`,
+      asin,
+      marketplace: 1,
+      title: product.title,
+      images: product.image ?? "",
+      brand: product.title.split(" ")[0],
+      category: index % 2 === 0 ? "Toys & Games" : "Home & Kitchen",
+      buyCost,
+      sellPrice,
+      sellPriceSource: "seeded",
+      buyBoxPrice: sellPrice,
+      snapshotCapturedAt: new Date(anchor - (1 + index) * DAY_MS),
+      referralRule: { kind: "fixed", steps: [{ upTo: null, rate: 0.15 }], minFee: 0.3 },
+      fbaFulfillmentFee: 399 + index % 4 * 100,
+      variableClosingFee: null,
+      feeBasisPrice: sellPrice,
+      weight: null,
+      weightPounds: 0.6 + index % 5 * 0.4,
+      lengthInches: 8 + index % 3 * 2,
+      widthInches: 6 + index % 2 * 2,
+      heightInches: 3 + index % 4,
+      shippingCost: null,
+      shippingEstimate: 550,
+      fulfillment: null,
+      notes: null,
+      position: index,
+      salesRank: 1200 + index * 977 % 9e3,
+      monthlySales: 80 + index * 131 % 700,
+      fbaOfferCount: 2 + index % 5,
+      fbmOfferCount: index % 3,
+      isOfferAmazon: index % 6 === 0,
+      ...gating,
+      isHazmat: false,
+      hazmatReason: null,
+      hazmatClass: null,
+      hazmatException: null,
+      isMeltable: index === 12,
+      urls: [
+        {
+          id: `folder-item-url-${index}`,
+          folderItemId: `folder-item-${index}`,
+          url: product.url,
+          label: product.retailer,
+          searchId: null,
+          createdAt: new Date(anchor - (1 + index) * DAY_MS)
+        }
+      ],
+      archivedAt: null,
+      createdAt: new Date(anchor - (1 + index) * DAY_MS),
+      updatedAt: new Date(anchor - index * HOUR_MS)
+    };
+  });
+  overview.liveBuyBox = new Map(
+    overview.items.map((item) => {
+      const snapshot = item.buyBoxPrice;
+      const live = item.position === 1 ? Math.round(snapshot * 1.26) : item.position === 5 ? Math.round(snapshot * 0.82) : snapshot;
+      return [item.asin, live];
+    })
+  );
+  overview.readIds = /* @__PURE__ */ new Set();
+  const today = overview.sellers.reduce(
+    (sum, seller) => sum + (seller.postingActivity[seller.postingActivity.length - 1]?.productCount ?? 0),
+    0
+  );
+  overview.notifications = [
+    {
+      id: "notif-digest-today",
+      source: "digest",
+      eventType: "digest.daily",
+      level: "info",
+      payload: { totalProducts: today, sellerCount: overview.sellers.filter((seller) => seller.status === "A").length },
+      readAt: null,
+      createdAt: new Date(anchor - 2 * HOUR_MS)
+    }
+  ];
+}
+function markProductRead(productId) {
+  if (overview.readIds.has(productId)) return;
+  overview.readIds.add(productId);
+  const product = overview.products.find((row) => row.id === productId);
+  if (!product) return;
+  const seller = overview.sellers.find((row) => row.sellerDbId === product.sellerDbId);
+  if (seller && seller.totalUnreadProducts > 0) seller.totalUnreadProducts -= 1;
+}
+function markAllProductsRead() {
+  let count = 0;
+  for (const product of overview.products) {
+    if (!overview.readIds.has(product.id)) {
+      overview.readIds.add(product.id);
+      count += 1;
+    }
+  }
+  for (const seller of overview.sellers) seller.totalUnreadProducts = 0;
+  return count;
+}
+var seedAnchor = anchor;
+
 // src/db.ts
 var database = {
   watches: /* @__PURE__ */ new Map(),
@@ -23984,8 +24245,8 @@ var database = {
   alerts: /* @__PURE__ */ new Map(),
   users: /* @__PURE__ */ new Map()
 };
-var HOUR_MS = 60 * 60 * 1e3;
-var anchor = Math.floor(Date.now() / HOUR_MS) * HOUR_MS;
+var HOUR_MS2 = 60 * 60 * 1e3;
+var anchor2 = Math.floor(Date.now() / HOUR_MS2) * HOUR_MS2;
 function initializeDemo() {
   const userId = "demo-user-sandbox";
   database.users.set(userId, {
@@ -24002,7 +24263,7 @@ function initializeDemo() {
     const targetId = `target-seed-${i}`;
     const scrapeFailed = !!product.failed || product.priceCents === null;
     const cadenceMs = CADENCES[i % CADENCES.length] * 60 * 1e3;
-    const lastPolledAt = scrapeFailed ? null : new Date(anchor - (i + 1) * 9e5);
+    const lastPolledAt = scrapeFailed ? null : new Date(anchor2 - (i + 1) * 9e5);
     const checkHistory = scrapeFailed ? null : (() => {
       const current = product.priceCents;
       const firstStep = 3 + i % 3;
@@ -24022,7 +24283,7 @@ function initializeDemo() {
       marketplace: 1,
       normalizedUrl: product.url,
       pollIntervalMinutes: CADENCES[i % CADENCES.length],
-      nextPollAt: new Date(anchor + HOUR_MS),
+      nextPollAt: new Date(anchor2 + HOUR_MS2),
       // A page we could not read gets no successful poll and a failure stamp,
       // which is what drives the row's "can't read the page" state. Seeding it
       // honestly beats pretending every retailer scrapes cleanly.
@@ -24037,7 +24298,7 @@ function initializeDemo() {
         stockStatus: scrapeFailed ? "unknown" : "in_stock"
       },
       failureCount: scrapeFailed ? 3 : 0,
-      lastFailedAt: scrapeFailed ? new Date(anchor - HOUR_MS) : null,
+      lastFailedAt: scrapeFailed ? new Date(anchor2 - HOUR_MS2) : null,
       pausedUntil: null
     });
     const isPriceWatch = i % 3 !== 2;
@@ -24052,9 +24313,9 @@ function initializeDemo() {
       reason: null,
       pollIntervalMinutes: CADENCES[i % CADENCES.length],
       snoozeUntil: null,
-      expiresAt: new Date(anchor + 30 * 24 * HOUR_MS),
+      expiresAt: new Date(anchor2 + 30 * 24 * HOUR_MS2),
       status: "active",
-      createdAt: new Date(anchor - (i + 1) * HOUR_MS),
+      createdAt: new Date(anchor2 - (i + 1) * HOUR_MS2),
       archivedAt: null,
       marketplace: 1
     });
@@ -24066,19 +24327,22 @@ function initializeDemo() {
         watchId,
         userId,
         marketplace: 1,
-        triggeredAt: new Date(anchor - (i + 2) * 2 * HOUR_MS),
+        triggeredAt: new Date(anchor2 - (i + 2) * 2 * HOUR_MS2),
         // structured like the real producer writes it, so the v3 alert feed
         // renders the % chip and the before -> after prices instead of the
         // "Alert" fallback it uses for shapes it can't read
+        // the third fire is a window that closed: it alerted below today's
+        // price, so the feed reads it as "price back up" and the tile as gone
         whatChanged: {
           condition: "price_drop",
           before: { priceCents: was },
-          after: { priceCents: product.priceCents }
+          after: { priceCents: i === 10 ? Math.round(product.priceCents * 0.92) : product.priceCents }
         },
         deliveryStatus: "sent"
       });
     }
   });
+  initializeOverviewDemo(userId);
   return userId;
 }
 function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl) {
@@ -29357,8 +29621,234 @@ var registerCustom = SuperJSON.registerCustom;
 var registerSymbol = SuperJSON.registerSymbol;
 var allowErrorProps = SuperJSON.allowErrorProps;
 
-// src/trpc.ts
+// src/t.ts
 var t = initTRPC.context().create({ transformer: dist_default });
+
+// src/overview-routers.ts
+var feedInput = external_exports.object({
+  page: external_exports.number().int().optional(),
+  limit: external_exports.number().int().optional(),
+  isNew: external_exports.boolean().optional(),
+  keyword: external_exports.string().optional(),
+  sellerIds: external_exports.array(external_exports.string()).optional()
+}).passthrough();
+function feedPage(input) {
+  const limit = input.limit ?? 25;
+  const page = input.page ?? 0;
+  let rows = overview.products;
+  if (input.sellerIds && input.sellerIds.length > 0) {
+    const wanted = new Set(input.sellerIds);
+    rows = rows.filter((product) => wanted.has(product.sellerDbId));
+  }
+  if (input.isNew) rows = rows.filter((product) => product.isNew);
+  if (input.keyword) {
+    const needle = input.keyword.toLowerCase();
+    rows = rows.filter((product) => product.title.toLowerCase().includes(needle));
+  }
+  const sorted = [...rows].sort((a, b) => b.firstSeenAt.getTime() - a.firstSeenAt.getTime());
+  return {
+    products: sorted.slice(page * limit, page * limit + limit).map((product) => ({
+      id: product.id,
+      title: product.title,
+      productId: product.productId,
+      storefrontPrice: product.storefrontPrice,
+      buyBoxPrice: product.buyBoxPrice,
+      storefrontPricePercentage: 100,
+      isFBA: product.isFBA,
+      isFBM: product.isFBM,
+      isBuyBoxFBA: product.isBuyBoxFBA,
+      isBuyBoxAmazon: product.isBuyBoxAmazon,
+      isOfferAmazon: product.isOfferAmazon,
+      salesRank: product.salesRank,
+      salesRankPercentile: null,
+      monthlySales: product.monthlySales,
+      avgPrice: product.buyBoxPrice,
+      brand: product.brand,
+      category: product.category,
+      rating: product.rating,
+      ratingCount: product.ratingCount,
+      stockCount: null,
+      images: product.images,
+      domain: "1",
+      offerFBACount: product.offerFBACount,
+      offerFBMCount: product.offerFBMCount,
+      firstSeenAt: product.firstSeenAt.toISOString(),
+      sellerName: product.sellerName,
+      sellerId: product.sellerDbId,
+      isNew: product.isNew,
+      fees: null
+    })),
+    totalProducts: sorted.length
+  };
+}
+var watchlistRouter = t.router({
+  getAll: t.procedure.query(() => overview.sellers),
+  getProducts: t.procedure.input(feedInput).query(({ input }) => feedPage(input)),
+  update: t.procedure.input(
+    external_exports.object({
+      sellerId: external_exports.string(),
+      status: external_exports.enum(["A", "P"]).optional(),
+      isBookmarked: external_exports.boolean().optional(),
+      nickName: external_exports.string().nullable().optional()
+    })
+  ).mutation(({ input }) => {
+    const seller = overview.sellers.find((row) => row.id === input.sellerId);
+    if (!seller) throw new TRPCError({ code: "NOT_FOUND", message: "Seller not found" });
+    if (input.status) seller.status = input.status;
+    if (input.isBookmarked != null) seller.isBookmarked = input.isBookmarked;
+    if (input.nickName !== void 0) seller.nickName = input.nickName;
+    return seller;
+  }),
+  getBrandsInView: t.procedure.input(external_exports.any()).query(() => []),
+  getFeatured: t.procedure.query(() => ({ status: "no_sellers", recommendations: [] })),
+  getRecentlyPosted: t.procedure.input(external_exports.any()).query(() => ({ recommendations: [] }))
+});
+var sellersRouter = t.router({
+  getProducts: t.procedure.input(feedInput).query(({ input }) => feedPage(input)),
+  getBrandsInView: t.procedure.input(external_exports.any()).query(() => [])
+});
+var bookmarksRouter = t.router({
+  getReadIds: t.procedure.query(() => Array.from(overview.readIds)),
+  markOneRead: t.procedure.input(external_exports.object({ sellerId: external_exports.string(), productId: external_exports.string() })).mutation(({ input }) => {
+    markProductRead(input.productId);
+    return { message: "ok" };
+  }),
+  markAllRead: t.procedure.input(external_exports.object({ action: external_exports.enum(["click", "dismissed"]).optional() }).optional()).mutation(() => ({ message: "ok", count: markAllProductsRead() })),
+  getIds: t.procedure.query(() => []),
+  getSavedAsins: t.procedure.query(() => []),
+  getAll: t.procedure.input(external_exports.any()).query(() => ({ products: [], totalProducts: 0 }))
+});
+var foldersRouter = t.router({
+  listFolders: t.procedure.query(() => [
+    ...overview.folders.map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      defaultFulfillment: folder.defaultFulfillment,
+      itemCount: overview.items.filter((item) => item.folderId === folder.id && !item.archivedAt).length,
+      kind: "folder"
+    })),
+    { id: "trash", name: "Trash", defaultFulfillment: "fba", itemCount: 0, kind: "trash" }
+  ]),
+  // "all" is the synthetic leading tab: every live lead across folders
+  listItems: t.procedure.input(external_exports.object({ folderId: external_exports.string() })).query(({ input }) => {
+    if (input.folderId === "trash") return overview.items.filter((item) => item.archivedAt);
+    const live = overview.items.filter((item) => !item.archivedAt);
+    if (input.folderId === "all") return live;
+    return live.filter((item) => item.folderId === input.folderId);
+  }),
+  getSettings: t.procedure.query(() => ({}))
+});
+var buyboxRouter = t.router({
+  getForAsins: t.procedure.input(external_exports.object({ asins: external_exports.array(external_exports.string()), marketplace: external_exports.number() })).query(
+    ({ input }) => Object.fromEntries(
+      input.asins.map((asin) => {
+        const cents = overview.liveBuyBox.get(asin);
+        return [
+          asin,
+          cents == null ? null : {
+            liveBuyBoxCents: cents,
+            currency: "USD",
+            shipping: null,
+            soldBy: null,
+            shipsFrom: null,
+            fba: true,
+            condition: "New",
+            refreshedAt: new Date(seedAnchor),
+            stale: false,
+            noOffer: false
+          }
+        ];
+      })
+    )
+  ),
+  peekStale: t.procedure.input(external_exports.object({ asins: external_exports.array(external_exports.string()), marketplace: external_exports.number() })).query(() => [])
+});
+var calculatorRouter = t.router({
+  getSettings: t.procedure.query(() => null),
+  saveSettings: t.procedure.input(external_exports.any()).mutation(({ input }) => input),
+  getFeeEstimates: t.procedure.input(external_exports.any()).query(() => ({})),
+  getFeeEstimate: t.procedure.input(external_exports.any()).query(() => null),
+  getExchangeRates: t.procedure.query(() => ({ base: "USD", rates: { USD: 1 }, fetchedAt: new Date(seedAnchor) })),
+  getSearchHistory: t.procedure.input(external_exports.any()).query(() => ({ items: [], nextCursor: null }))
+});
+var accountExtras = {
+  getUsage: t.procedure.query(() => ({ planName: "Ultra", usagePercent: 62, daysUntilReset: 12 })),
+  getStats: t.procedure.query(() => ({
+    thirtyDay: { productsClicked: 220, productsBookmarked: 31, periodDays: 30 }
+  })),
+  getPreferences: t.procedure.query(() => ({})),
+  savePreferences: t.procedure.input(external_exports.any()).mutation(({ input }) => input)
+};
+var billingRouter = t.router({
+  getSubscriptions: t.procedure.query(() => [
+    {
+      id: "sub-sandbox",
+      tier: "UL",
+      planName: "Ultra",
+      status: "active",
+      interval: "month",
+      trialEnd: null,
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: new Date(seedAnchor + 12 * 24 * 60 * 60 * 1e3)
+    }
+  ]),
+  getTrialInfo: t.procedure.input(external_exports.any()).query(() => ({ copy: null, eligible: false, trialDays: null, reason: "had_subscription" })),
+  getBillingMode: t.procedure.query(() => ({ mode: "stripe" }))
+});
+var HOUR_MS3 = 60 * 60 * 1e3;
+function notificationRows() {
+  const alertRows = Array.from(database.alerts.values()).map((alert) => {
+    const watch = database.watches.get(alert.watchId);
+    const target = watch ? database.targets.get(watch.targetId) : null;
+    const changed = alert.whatChanged ?? {};
+    return {
+      id: `notif-${alert.id}`,
+      source: "watchers",
+      eventType: `watcher.${changed.condition ?? "price_change"}`,
+      level: "info",
+      payload: {
+        asin: target?.asin ?? null,
+        url: target?.normalizedUrl ?? null,
+        marketplace: target?.marketplace ?? 1,
+        before: changed.before,
+        after: changed.after
+      },
+      readAt: alert.triggeredAt.getTime() < seedAnchor - 20 * HOUR_MS3 ? new Date(alert.triggeredAt.getTime() + HOUR_MS3) : null,
+      createdAt: alert.triggeredAt
+    };
+  });
+  return [...overview.notifications, ...alertRows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+var notificationsRouter = t.router({
+  unreadCount: t.procedure.query(() => {
+    const rows = notificationRows();
+    return { count: rows.filter((row) => !row.readAt).length, total: rows.length };
+  }),
+  list: t.procedure.input(external_exports.object({ cursor: external_exports.string().optional(), limit: external_exports.number().optional(), isUnreadOnly: external_exports.boolean().optional() }).optional()).query(({ input }) => {
+    const rows = notificationRows().filter((row) => !input?.isUnreadOnly || !row.readAt);
+    return { items: rows.slice(0, input?.limit ?? 20), nextCursor: null };
+  }),
+  markRead: t.procedure.input(external_exports.any()).mutation(() => ({ ok: true })),
+  markSeen: t.procedure.input(external_exports.any()).mutation(() => ({ ok: true })),
+  dismiss: t.procedure.input(external_exports.any()).mutation(() => ({ ok: true })),
+  markClicked: t.procedure.input(external_exports.any()).mutation(() => ({ ok: true })),
+  listPreferences: t.procedure.query(() => [])
+});
+var shellRouters = {
+  auth: t.router({ getFlags: t.procedure.query(() => ({})) }),
+  savedFilters: t.router({ getAll: t.procedure.query(() => []) }),
+  smartFilter: t.router({ getHistory: t.procedure.query(() => []) }),
+  announcements: t.router({
+    currentActive: t.procedure.query(() => null),
+    recent: t.procedure.query(() => [])
+  }),
+  tags: t.router({
+    getAll: t.procedure.query(() => []),
+    getCategories: t.procedure.query(() => [])
+  })
+};
+
+// src/trpc.ts
 var PollIntervalEnum = external_exports.union([external_exports.literal(120), external_exports.literal(180), external_exports.literal(360), external_exports.literal(1440)]);
 var CreateWatchSchema = external_exports.object({
   targetType: external_exports.enum(["asin", "url"]),
@@ -29551,7 +30041,7 @@ var accountRouter = t.router({
   getMe: t.procedure.query(({ ctx }) => ({
     id: ctx.userId,
     email: "claude@stealthseller.co",
-    fullName: "Watchers Sandbox",
+    fullName: "Will Sandbox",
     type: "admin",
     country: "US",
     preferredZipcode: "10001",
@@ -29570,11 +30060,21 @@ var accountRouter = t.router({
     currentDeviceId: null,
     lastActive: /* @__PURE__ */ new Date(),
     createdAt: new Date(Date.now() - 90 * 24 * 36e5)
-  }))
+  })),
+  ...accountExtras
 });
 var router = t.router({
   monitoring: monitoringRouter,
-  account: accountRouter
+  account: accountRouter,
+  watchlist: watchlistRouter,
+  sellers: sellersRouter,
+  bookmarks: bookmarksRouter,
+  folders: foldersRouter,
+  buybox: buyboxRouter,
+  calculator: calculatorRouter,
+  billing: billingRouter,
+  notifications: notificationsRouter,
+  ...shellRouters
 });
 
 // src/server.ts
