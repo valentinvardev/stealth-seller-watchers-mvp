@@ -1,7 +1,12 @@
 // Firecrawl integration for URL scraping
-// API Key: fc-1f1a49f82c3242fba26c235967b6b42a
 
-const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY || "fc-1f1a49f82c3242fba26c235967b6b42a";
+// Read from the environment only. The key used to sit here as a literal
+// fallback and shipped to a public repo; never put a value back in this file.
+function firecrawlApiKey(): string {
+  const key = process.env.FIRECRAWL_API_KEY;
+  if (!key) throw new Error("FIRECRAWL_API_KEY is not set");
+  return key;
+}
 const FIRECRAWL_API_URL = "https://api.firecrawl.dev/v0";
 
 export type FirecrawlScrapedData = {
@@ -27,7 +32,7 @@ export async function scrapeUrl(url: string): Promise<FirecrawlScrapedData> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+        Authorization: `Bearer ${firecrawlApiKey()}`,
       },
       body: JSON.stringify({
         url,
