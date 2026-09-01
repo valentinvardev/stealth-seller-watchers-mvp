@@ -1,0 +1,1 @@
+import{K as a,L as e,N as r,O as o}from"./index-DWdGgkIx.js";import"./radix-B3osZi5o.js";import"./vendor-DfXjsB5x.js";r(o({slowClickIgnoreSelectors:['[role="tab"]']}));async function l(){const t=a();t&&(await t.stop(),Math.random()<e?t.start():t.startBuffering())}export{l as restartReplay};
