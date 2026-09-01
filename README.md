@@ -72,8 +72,13 @@ deployments work — see the comment at the top of the script.
 ## Deploy
 
 Vercel, zero config. `api/` is picked up automatically, `public/` is served as
-static, and `vercel.json` adds the SPA fallback. No environment variables are
-required.
+static, and `vercel.json` adds the SPA fallback. One optional environment
+variable: `YOUTUBE_API_KEY` (a YouTube Data API v3 key, set in the Vercel
+project settings, never in the repo). Without it the `/mentions` page serves the
+committed snapshot in `backend/src/mentions-seed.ts` and says so; with it the
+backend sweeps YouTube search a few times a day (capped at 18 search calls per
+instance per UTC day, since several warm instances share Google's 100 per day)
+and refreshes view counts every 30 minutes.
 
 ## What the API implements
 
@@ -85,6 +90,16 @@ can be demoed without waiting on a poll.
 
 `account.getMe` and `/api/auth/get-session` exist only to satisfy the
 frontend's route guards.
+
+Under `mentions.*` (the `/mentions` page, YouTube brand mentions): `overview`
+(one query with everything the page needs: videos, channels, discovery
+freshness, per-instance search budget, source live or snapshot), `triage`
+(confirm, review, dismiss or undo a video), `suppressChannel`, `refreshStats`
+(forces a videos.list and channels.list refresh) and `sweepNow` (forces a
+search sweep if the budget allows). All state is per instance memory seeded
+from `backend/src/mentions-seed.ts`, the 2026-09-01 pull curated by hand. The
+frontend keeps its own copy of verdicts and view counts in localStorage so a
+device's triage and "since you looked" deltas survive an instance recycle.
 
 ## Caveats
 

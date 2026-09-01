@@ -11,22 +11,21 @@
     src: url('/fonts/PPMondwest-Regular.woff2') format('woff2');
     font-display: swap;
   }
-  /* v3 light tokens (src/v3/v3.css) */
   :root {
-    --bg: #FAFAFA;        /* --background 0 0% 98% */
-    --fg: #0A0A0A;        /* --foreground 0 0% 4% */
-    --muted: #737373;     /* --muted-foreground 0 0% 45% */
-    --muted-bg: #EDEDED;  /* --muted 0 0% 93% */
-    --border: #E3E3E3;    /* --border 0 0% 89% */
-    --accent: #FC5815;    /* --primary 18 97% 54% */
-    --card: #F6F6F6;      /* --card 0 0% 96.5% */
+    --bg: #FAFAFA;
+    --fg: #0A0A0A;
+    --muted: #737373;
+    --muted-bg: #EDEDED;
+    --border: #E3E3E3;
+    --accent: #FC5815;
+    --card: #F6F6F6;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: var(--bg);
     color: var(--fg);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px; /* v3 text-sm body */
+    font-size: 14px;
     line-height: 1.65;
   }
   .wrap { max-width: 720px; margin: 0 auto; padding: 64px 24px 96px; }
@@ -39,20 +38,17 @@
   }
   h1 .accent { color: var(--accent); }
   .updated { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
-  /* page-hero style: semibold tight heading over a hairline separator */
-  /* v3 page-hero h2: text-xl font-semibold tracking-tight */
   h2 {
     font-size: 20px;
     font-weight: 600;
     letter-spacing: -0.025em;
-    margin: 32px 0 8px; /* tailwind mt-8 / mb-2 */
+    margin: 32px 0 8px;
   }
   p, li { color: var(--fg); margin-bottom: 8px; }
-  b { font-weight: 500; } /* v3 medium, matches th/card-title weight */
+  b { font-weight: 500; }
   ul { padding-left: 20px; margin-bottom: 8px; }
   .muted { color: var(--muted); }
   a { color: var(--accent); }
-  /* v3 table: rounded-xl bordered container, muted header, no last-row border */
   table {
     width: 100%;
     border-collapse: separate;
@@ -64,18 +60,16 @@
     overflow: hidden;
   }
   th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { background: var(--muted-bg); color: var(--muted); font-weight: 500; } /* v3 TableHead: medium, muted-foreground */
+  th { background: var(--muted-bg); color: var(--muted); font-weight: 500; }
   tr:last-child td { border-bottom: 0; }
-  /* v3 card: rounded-2xl, border, bg-card, no shadow */
   .callout {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 12px 16px; /* tailwind py-3 px-4 */
+    padding: 12px 16px;
     margin: 16px 0;
   }
   .callout p { margin-bottom: 0; }
-  /* v3 button.tsx ghost variant, default size: h-8 px-2.5 rounded-xl text-sm font-medium */
   .btn-ghost {
     display: inline-flex;
     align-items: center;
@@ -156,7 +150,6 @@
   <p>1981 LLC dba Stealth Seller<br><a href="mailto:support@stealthseller.co">support@stealthseller.co</a></p>
 
   <p style="margin-top:40px; margin-left:-10px"><a class="btn-ghost" href="https://app.stealthseller.co">
-    <!-- v3 icon-arrow-left.tsx, inlined at button svg size (16px) -->
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 12L3 12.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M5 14L5 14.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M7 16L7 16.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M9 18L9 18.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M5 10L5 10.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M7 8L7 8.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M9 6L9 6.01" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path><path d="M5 12L21 12" stroke="currentColor" stroke-width="2" stroke-linecap="square" fill="none"></path></svg>
     Back to Stealth Seller</a></p>
 

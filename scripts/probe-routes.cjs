@@ -5,7 +5,7 @@ const { chromium } = require("playwright-core");
 
 const BASE = process.argv[2] || "http://localhost:3010";
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const ROUTES = ["/", "/product-feed", "/watchers", "/folders", "/sellers", "/bookmarks"];
+const ROUTES = ["/", "/overview", "/mentions", "/product-feed", "/watchers", "/folders", "/sellers", "/bookmarks"];
 
 (async () => {
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });

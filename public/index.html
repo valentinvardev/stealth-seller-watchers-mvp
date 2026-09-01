@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><script>/*sandbox-storage-guard*/try{var k="__sandbox_build";if(localStorage.getItem(k)!=="index-Biu3Mc42"){localStorage.clear();sessionStorage.clear();localStorage.setItem(k,"index-Biu3Mc42");}}catch(e){}</script>
+  <head><script>/*sandbox-storage-guard*/try{var k="__sandbox_build";if(localStorage.getItem(k)!=="index-CEnQOuri"){localStorage.clear();sessionStorage.clear();localStorage.setItem(k,"index-CEnQOuri");}}catch(e){}</script>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,18 +9,14 @@
       name="description"
       content="Stealth Seller automates storefront stalking for you. No more manual storefront stalking. We will notify you when your favorite storefront adds new or restocks products."
     />
-    <!-- CSP via meta tag - frame-ancestors directive removed (not supported in meta tags) -->
-    <!-- s3.us-east-1.amazonaws.com is in connect-src for admin image uploads, which
-         POST straight to the bucket. It is the whole regional endpoint rather than
-         one bucket because our bucket names contain dots, which rules out the
-         per-bucket host (it falls outside S3's wildcard certificate). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://*.intercom.io https://*.intercomcdn.com https://player.vimeo.com https://us-assets.i.posthog.com https://analytics.stealthseller.co https://r.wdfl.co https://datafa.st; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://rsms.me https://*.intercomcdn.com; font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai https://*.intercomcdn.com https://*.intercom.io data:; connect-src 'self' https://api.stealthseller.co https://dev.api.stealthseller.co wss://api.stealthseller.co wss://dev.api.stealthseller.co wss://api.deepgram.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com http://localhost:* ws://localhost:* https://*.intercom.io wss://*.intercom.io https://*.intercomcdn.com https://*.intercom-messenger.com wss://*.intercom-messenger.com https://player.vimeo.com https://vimeo.com https://us.i.posthog.com https://us-assets.i.posthog.com https://analytics.stealthseller.co https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://api.getrewardful.com https://ipapi.co https://datafa.st https://sentry.stealthseller.co https://s3.us-east-1.amazonaws.com; worker-src 'self' blob:; img-src 'self' data: blob: https:; media-src 'self' https://*.intercomcdn.com; frame-src 'self' https://accounts.google.com https://player.vimeo.com https://vimeo.com https://*.intercom.io https://www.loom.com https://loom.com; form-action 'self';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://accounts.google.com https://apis.google.com https://*.intercom.io https://*.intercomcdn.com https://player.vimeo.com https://us-assets.i.posthog.com https://analytics.stealthseller.co https://r.wdfl.co https://datafa.st; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://rsms.me https://*.intercomcdn.com; font-src 'self' https://rsms.me https://fonts.gstatic.com https://r2cdn.perplexity.ai https://*.intercomcdn.com https://*.intercom.io data:; connect-src 'self' https://api.stripe.com https://merchant-ui-api.stripe.com https://r.stripe.com https://api.stealthseller.co https://dev.api.stealthseller.co wss://api.stealthseller.co wss://dev.api.stealthseller.co wss://api.deepgram.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com http://localhost:* ws://localhost:* https://*.intercom.io wss://*.intercom.io https://*.intercomcdn.com https://*.intercom-messenger.com wss://*.intercom-messenger.com https://player.vimeo.com https://vimeo.com https://us.i.posthog.com https://us-assets.i.posthog.com https://analytics.stealthseller.co https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com https://api.getrewardful.com https://ipapi.co https://datafa.st https://sentry.stealthseller.co https://s3.us-east-1.amazonaws.com; worker-src 'self' blob:; img-src 'self' data: blob: https:; media-src 'self' https://*.intercomcdn.com; frame-src 'self' https://cal.com https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://accounts.google.com https://player.vimeo.com https://vimeo.com https://*.intercom.io https://www.loom.com https://loom.com; form-action 'self';"
     />
     <link rel="apple-touch-icon" href="/favicon.png" />
     <link rel="manifest" href="/manifest.json" />
-    <!-- Fonts -->
+    <link rel="preconnect" href="https://rsms.me" crossorigin />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -30,9 +26,7 @@
     <title>
       Stealth Seller | Storefront stalking, reimagined for resellers.
     </title>
-    <!-- DataFast Analytics is loaded conditionally in src/app/DataFast.tsx
-         (marketing/signup/checkout routes only, not the authed app) -->
-    <!-- Rewardful Affiliate Tracking, top-level pages only, skipped inside the extension iframe -->
+    <script src="https://js.stripe.com/basil/stripe.js"></script>
     <script>
       if (window.self === window.top) {
         (function(w,r){w._rwq=r;w[r]=w[r]||function(){(w[r].q=w[r].q||[]).push(arguments)}})(window,'rewardful');
@@ -41,26 +35,19 @@
         document.head.appendChild(rw);
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-Biu3Mc42.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-BDaJzvHx.js">
-    <link rel="modulepreload" crossorigin href="/assets/radix-BAjQurMW.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-DrMT_7gx.css">
+    <script type="module" crossorigin src="/assets/index-CEnQOuri.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-DfXjsB5x.js">
+    <link rel="modulepreload" crossorigin href="/assets/radix-B3osZi5o.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-7ZzGgPjP.css">
   </head>
   <body class="radix-themes" style="margin:0">
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <!-- Boot loader: shown from 0ms so slow connections see a loading state
-         instead of a blank wall while the bundle downloads. createRoot clears
-         #root on first render, so React removes it automatically. The svg is
-         a frozen copy of v3's IconLoader pixel sweep; #737373 is v3
-         muted-foreground — no app CSS has loaded yet, so literals only. -->
     <style>
       @keyframes boot-sweep { 0%, 7% { opacity: 1; } 60%, 100% { opacity: 0.1; } }
       #boot-loader { background: #ffffff; }
       #boot-loader svg { color: #737373; }
       #root.boot-dark #boot-loader { background: #0A0A0A; }
       #root.boot-dark #boot-loader svg { color: #8A8A8A; }
-      /* keeps the first React commits dark until a themed surface paints;
-         v3 theme sync / LoadingFallback / v1 auth routes remove the class */
       #root.boot-dark, #root.boot-dark .radix-themes { background-color: #0A0A0A; }
       #boot-loader path { animation: boot-sweep 1s linear infinite; }
       #boot-loader path:nth-of-type(1)  { animation-delay: -1s; }
@@ -98,8 +85,6 @@
         </svg>
       </div>
     </div>
-    <!-- Same theme resolution as v3/lib/theme.tsx: ?theme= URL param (embed)
-         wins over the saved localStorage pref; anything else means light. -->
     <script>
       (function () {
         var theme = "light";
@@ -111,14 +96,6 @@
         if (theme === "dark") document.getElementById("root").classList.add("boot-dark");
       })();
     </script>
-    <!-- Boot watchdog: if the bundle never mounts (script 404, crash before
-         React renders), the boot loader above never gets cleared and the user
-         spins forever. At 20s, swap it for an error state styled like v3's
-         EmptyStateOverlay (frozen token literals — same no-CSS reasoning).
-         20s, not 10s: Sentry pageload data (14d, 2026-07) shows 4% of
-         SUCCESSFUL loads paint after 10s on slow connections vs 0.2% after
-         20s. No Sentry here on purpose — in this failure mode the SDK itself
-         may not have loaded. -->
     <script>
       setTimeout(function () {
         if (!document.getElementById("boot-loader")) return;
@@ -138,15 +115,6 @@
           '</div></div>';
       }, 20000);
     </script>
-    <!-- Cache-heal: a corrupted cached copy of the entry bundle throws a
-         SyntaxError before a single line runs. No Sentry, no React, and the
-         immutable cache headers make every manual reload serve the same bad
-         bytes. Chrome reports module parse errors at window level (not on the
-         script tag), so listen there; fetch cache:"reload" overwrites the
-         poisoned cache entry, then one reload boots from fresh bytes. The
-         sessionStorage latch stops a reload loop when the origin itself is
-         serving bad bytes (the watchdog above takes over at 20s). The latch
-         is cleared on successful boot in src/index.tsx. -->
     <script>
       window.addEventListener("error", function (event) {
         var parseFailed = event.message && event.message.indexOf("SyntaxError") !== -1 &&
@@ -164,5 +132,6 @@
           .then(function () { location.reload(); });
       }, true);
     </script>
+    <div id="portal-root"></div>
   </body>
 </html>

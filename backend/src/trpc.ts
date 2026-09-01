@@ -17,6 +17,7 @@ import {
   shellRouters,
   watchlistRouter,
 } from "./overview-routers";
+import { mentionsRouter } from "./mentions-router";
 
 const PollIntervalEnum = z.union([z.literal(120), z.literal(180), z.literal(360), z.literal(1440)]);
 
@@ -292,6 +293,7 @@ export const router = t.router({
   calculator: calculatorRouter,
   billing: billingRouter,
   notifications: notificationsRouter,
+  mentions: mentionsRouter,
   ...shellRouters,
 });
 
