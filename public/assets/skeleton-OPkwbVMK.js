@@ -1,0 +1,1 @@
+import{j as o}from"./radix-DOvOyygu.js";import{q as s}from"./index-DdxKDiGD.js";function n({className:t,...e}){return o.jsx("div",{"data-slot":"skeleton",className:s("animate-pulse rounded-md bg-muted",t),...e})}export{n as S};

@@ -1,0 +1,1 @@
+import{j as m}from"./radix-DOvOyygu.js";import{T as n}from"./table-C5vznNdL.js";function i({field:o,sortBy:r,sortDir:t,onSort:a,className:e,children:s}){return m.jsx(n,{className:e,onSort:()=>a(o),sorted:r===o,sortDir:t,children:s})}export{i as S};
