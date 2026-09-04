@@ -5,9 +5,7 @@
   "private": true,
   "scripts": {
     "backend:dev": "cd backend && npm run dev",
-    "backend:build": "cd backend && npm run build",
-    "scan:dev": "cd scan && npm run dev",
-    "scan:build": "cd scan && npm install && npm run build"
+    "backend:build": "cd backend && npm run build"
   },
   "dependencies": {
     "@trpc/server": "^10.45.2",

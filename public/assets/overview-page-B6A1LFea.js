@@ -1,0 +1,1 @@
+import{j as e}from"./radix-85acskyc.js";import{A as t}from"./admin-placeholder-B-P_V51_.js";import{L as r}from"./layout-dashboard-DRzj1TEN.js";import"./vendor-CdqajW_f.js";import"./index-Cp3tRjlo.js";function n(){return e.jsx(t,{icon:e.jsx(r,{className:"h-5 w-5"}),title:"Overview",subtitle:"Signups, revenue and trials at a glance. Not wired up yet."})}export{n as default};
