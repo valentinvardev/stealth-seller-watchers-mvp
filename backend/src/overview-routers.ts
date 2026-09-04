@@ -134,7 +134,94 @@ export const foldersRouter = t.router({
     return live.filter((item) => item.folderId === input.folderId);
   }),
   getSettings: t.procedure.query(() => ({})),
+  // What the mobile prototype's "send to folders" calls: same input the web
+  // calculator sends to the real folders.createItem. Rows go into the same
+  // in-memory list listItems reads, so the web Folders page of this deploy
+  // shows them (until the function instance recycles).
+  createItem: t.procedure
+    .input(
+      z.object({
+        folderId: z.string(),
+        asin: z.string(),
+        marketplace: z.number().int().default(1),
+        buyCost: z.number().int().nullable().optional(),
+        sellPrice: z.number().int().nullable().optional(),
+        sellPriceSource: z.enum(["user", "seeded"]).optional(),
+        shippingCost: z.number().int().nullable().optional(),
+        fulfillment: z.enum(["fba", "fbm"]).nullable().optional(),
+        notes: z.string().nullable().optional(),
+      }),
+    )
+    .mutation(({ input }) => {
+      const folder = overview.folders.find((f) => f.id === input.folderId);
+      if (!folder) throw new TRPCError({ code: "NOT_FOUND", message: `Folder ${input.folderId} does not exist` });
+      const known = MOBILE_LAB_PRODUCTS[input.asin];
+      const now = new Date();
+      const id = `folder-item-mobile-${now.getTime()}-${overview.items.length}`;
+      const sellPrice = input.sellPrice ?? known?.sellPrice ?? null;
+      overview.items.unshift({
+        id,
+        folderId: folder.id,
+        productId: `product-${input.asin}`,
+        asin: input.asin,
+        marketplace: input.marketplace,
+        title: known?.title ?? `ASIN ${input.asin}`,
+        images: "",
+        brand: known?.brand ?? null,
+        category: known?.category ?? null,
+        buyCost: input.buyCost ?? null,
+        sellPrice,
+        sellPriceSource: input.sellPriceSource ?? "seeded",
+        buyBoxPrice: sellPrice,
+        snapshotCapturedAt: now,
+        referralRule: { kind: "fixed", steps: [{ upTo: null, rate: 0.15 }], minFee: 0.3 },
+        fbaFulfillmentFee: known?.fbaFee ?? 399,
+        variableClosingFee: null,
+        feeBasisPrice: sellPrice,
+        weight: null,
+        weightPounds: 1,
+        lengthInches: 8,
+        widthInches: 6,
+        heightInches: 3,
+        shippingCost: input.shippingCost ?? null,
+        shippingEstimate: 550,
+        fulfillment: input.fulfillment ?? null,
+        notes: input.notes ?? null,
+        position: 0,
+        salesRank: known?.rank ?? null,
+        monthlySales: known?.monthly ?? null,
+        fbaOfferCount: known?.fba ?? null,
+        fbmOfferCount: known?.fbm ?? null,
+        isOfferAmazon: false,
+        gatingStatus: null,
+        gatingCheckedAt: null,
+        gatingGateType: null,
+        gatingApplyUrl: null,
+        isHazmat: false,
+        hazmatReason: null,
+        hazmatClass: null,
+        hazmatException: null,
+        isMeltable: false,
+        urls: [],
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      return { id };
+    }),
 });
+
+// The mobile prototype's lab catalog, so a row sent from the phone reads like
+// a product instead of a bare ASIN. Prices in cents.
+const MOBILE_LAB_PRODUCTS: Record<string, { title: string; brand: string; category: string; sellPrice: number; fbaFee: number; rank: number; monthly: number; fba: number; fbm: number }> = {
+  B0BKJ8N5PL: { title: "LEGO Icons Bonsai Tree 10281", brand: "LEGO", category: "Toys & Games", sellPrice: 4150, fbaFee: 1210, rank: 310, monthly: 900, fba: 18, fbm: 5 },
+  B004BPIPFM: { title: "NIVEA All purpose Creme 150 ml (Pack of 4)", brand: "NIVEA", category: "Beauty & Personal Care", sellPrice: 2294, fbaFee: 710, rank: 50160, monthly: 80, fba: 6, fbm: 3 },
+  B07QN7FZ7L: { title: "Ninja Professional Blender 1000W, 72 oz", brand: "Ninja", category: "Home & Kitchen", sellPrice: 9499, fbaFee: 2140, rank: 890, monthly: 250, fba: 6, fbm: 2 },
+  B01N1UX8RW: { title: "OPI Nail Lacquer, Big Apple Red, 0.5 fl oz", brand: "OPI", category: "Beauty", sellPrice: 1220, fbaFee: 560, rank: 2210, monthly: 40, fba: 3, fbm: 9 },
+  B0C4YGSCRB: { title: "Yo Glow Enzyme Scrub, 2.5 oz", brand: "Wishful", category: "Beauty", sellPrice: 4872, fbaFee: 1156, rank: 4120, monthly: 400, fba: 2, fbm: 32 },
+  B08L6ZCS4Q: { title: "Campbell's Chunky Chicken Noodle Soup, 12 pack", brand: "Campbell's", category: "Grocery", sellPrice: 2350, fbaFee: 890, rank: 15300, monthly: 120, fba: 0, fbm: 14 },
+  B09XY5Z2K1: { title: "Atomic Habits (Hardcover)", brand: "Avery", category: "Books", sellPrice: 1899, fbaFee: 620, rank: 12, monthly: 60, fba: 4, fbm: 22 },
+};
 
 export const buyboxRouter = t.router({
   getForAsins: t.procedure
