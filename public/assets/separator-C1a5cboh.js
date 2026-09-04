@@ -1,0 +1,1 @@
+import{j as s,n as e}from"./radix-6i5EDAdv.js";import{o as i}from"./index-D1Y1QmGN.js";function p({className:a,orientation:t="horizontal",decorative:r=!0,...o}){return s.jsx(e,{"data-slot":"separator",decorative:r,orientation:t,className:i("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch",a),...o})}export{p as S};

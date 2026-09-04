@@ -1,0 +1,1 @@
+import{j as e}from"./radix-6i5EDAdv.js";import{E as i}from"./index-D1Y1QmGN.js";function a({icon:t,title:r,subtitle:s}){return e.jsx("div",{className:"flex h-full min-h-0 items-center justify-center p-6",children:e.jsx(i,{icon:t,title:r,subtitle:s})})}export{a as A};
