@@ -2,11 +2,18 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { useBarcodeScanner, type Decoded } from "./scanner";
 import { OfflineError, resolve, type Product } from "./resolve";
 import { evaluate } from "./verdict";
-import type { Camera, Lookup, Source, TripItem } from "./types";
+import type { Alert, AlertContext, Camera, Lookup, Source, Tab, TripItem } from "./types";
+import { FOLDERS } from "./types";
 import { NotFoundSheet, PickerSheet, ResultSheet, Toast, TripView, Viewfinder, money } from "./components";
+import { AccountView, AlertsView, FolderPicker, SignIn, Tabs } from "./screens";
 
-const TRIP_KEY = "stealth-scan.trip.v1";
-const NOTES_KEY = "stealth-scan.notes.v1";
+const KEYS = {
+  trip: "stealth-scan.trip.v1",
+  notes: "stealth-scan.notes.v1",
+  account: "stealth-scan.account.v1",
+  alerts: "stealth-scan.alerts.v1",
+  notif: "stealth-scan.notif.v1",
+};
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -20,18 +27,45 @@ function store(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // private mode or quota: the trip just does not persist this time
+    // private mode or quota: state just does not persist this time
   }
+}
+
+// Two watcher hits so the Alerts tab and the alert banner on the card have
+// something real-looking to show. The ASINs match the mock catalog.
+function seedAlerts(): Alert[] {
+  const now = Date.now();
+  return [
+    { id: "a1", asin: "B0BKJ8N5PL", title: "LEGO Icons Bonsai Tree 10281", context: { kind: "price_drop", from: 41.5, to: 34.99, checkedAgo: "12 min ago", store: "Amazon" }, at: now - 12 * 60_000, read: false },
+    { id: "a2", asin: "B07QN7FZ7L", title: "Ninja Professional Blender 1000W, 72 oz", context: { kind: "back_in_stock", checkedAgo: "2 h ago", store: "Walmart" }, at: now - 2 * 3_600_000, read: false },
+  ];
+}
+
+// The dock accepts whatever a reseller has in hand: a barcode, an ASIN, or an
+// Amazon link pasted from Telegram. A link counts as "shared" in the trip.
+function parseInput(raw: string): { code: string; source: Source } | null {
+  const text = raw.trim();
+  if (!text) return null;
+  const url = text.match(/amazon\.[a-z.]+\/(?:[^\s]*?\/)?(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/i);
+  if (url) return { code: url[1].toUpperCase(), source: "shared" };
+  if (/^B0[A-Z0-9]{8}$/i.test(text)) return { code: text.toUpperCase(), source: "typed" };
+  const digits = text.replace(/[\s-]/g, "");
+  if (/^\d{8,14}$/.test(digits)) return { code: digits, source: "typed" };
+  return { code: text, source: "typed" };
 }
 
 export function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [account, setAccount] = useState<{ email: string } | null>(() => load(KEYS.account, null));
+  const [tab, setTab] = useState<Tab>("scan");
   const [cameraAllowed, setCameraAllowed] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [view, setView] = useState<"scan" | "trip">("scan");
   const [lookup, setLookup] = useState<Lookup | null>(null);
-  const [trip, setTrip] = useState<TripItem[]>(() => load<TripItem[]>(TRIP_KEY, []));
-  const [notesByCode, setNotesByCode] = useState<Record<string, string>>(() => load(NOTES_KEY, {}));
+  const [trip, setTrip] = useState<TripItem[]>(() => load<TripItem[]>(KEYS.trip, []));
+  const [notesByCode, setNotesByCode] = useState<Record<string, string>>(() => load(KEYS.notes, {}));
+  const [alerts, setAlerts] = useState<Alert[]>(() => load(KEYS.alerts, seedAlerts()));
+  const [notif, setNotif] = useState(() => load(KEYS.notif, { priceDrop: true, backInStock: true }));
+  const [folder, setFolder] = useState<string>(FOLDERS[0]);
   const [cost, setCost] = useState("");
   const [notes, setNotes] = useState("");
   const [manual, setManual] = useState("");
@@ -39,8 +73,11 @@ export function App() {
   const lastDecodeRef = useRef<{ text: string; at: number } | null>(null);
   const lookupSeq = useRef(0);
 
-  useEffect(() => store(TRIP_KEY, trip), [trip]);
-  useEffect(() => store(NOTES_KEY, notesByCode), [notesByCode]);
+  useEffect(() => store(KEYS.trip, trip), [trip]);
+  useEffect(() => store(KEYS.notes, notesByCode), [notesByCode]);
+  useEffect(() => store(KEYS.account, account), [account]);
+  useEffect(() => store(KEYS.alerts, alerts), [alerts]);
+  useEffect(() => store(KEYS.notif, notif), [notif]);
 
   // Stop the camera when the app goes to the background (battery, and iOS
   // drops the stream anyway) and bring it back on return.
@@ -57,19 +94,19 @@ export function App() {
   }, [toast]);
 
   const startLookup = useCallback(
-    (code: string, source: Source) => {
+    (code: string, source: Source, alert?: AlertContext) => {
       const seq = ++lookupSeq.current;
       const startedAt = performance.now();
-      setLookup({ code, source, startedAt, state: "resolving" });
+      setLookup({ code, source, startedAt, state: "resolving", alert });
       setCost("");
       setNotes(notesByCode[code] ?? "");
       resolve(code)
         .then((r) => {
           if (seq !== lookupSeq.current) return; // a newer scan replaced this one
           const resolvedMs = performance.now() - startedAt;
-          if (r.kind === "found") setLookup({ code, source, startedAt, state: "found", product: r.product, resolvedMs });
-          else if (r.kind === "multi") setLookup({ code, source, startedAt, state: "multi", candidates: r.candidates, resolvedMs });
-          else setLookup({ code, source, startedAt, state: "notfound", resolvedMs });
+          if (r.kind === "found") setLookup({ code, source, startedAt, state: "found", product: r.product, resolvedMs, alert });
+          else if (r.kind === "multi") setLookup({ code, source, startedAt, state: "multi", candidates: r.candidates, resolvedMs, alert });
+          else setLookup({ code, source, startedAt, state: "notfound", resolvedMs, alert });
         })
         .catch((err: unknown) => {
           if (seq !== lookupSeq.current) return;
@@ -98,7 +135,7 @@ export function App() {
     [startLookup],
   );
 
-  const scannerActive = cameraAllowed && isVisible && view === "scan";
+  const scannerActive = account !== null && cameraAllowed && isVisible && tab === "scan";
   const status = useBarcodeScanner(videoRef, scannerActive, onDecode);
 
   const camera: Camera = !cameraAllowed
@@ -128,11 +165,11 @@ export function App() {
     const roi = hasCost ? evaluate(product, c).roi : undefined;
     rememberNotes(code, notes);
     setTrip((t) => [
-      { id: `${Date.now()}`, code, source, at: Date.now(), status: "kept", title: product.title, asin: product.asin, cost: hasCost ? c : undefined, roi, notes: notes.trim() || undefined },
+      { id: `${Date.now()}`, code, source, at: Date.now(), status: "kept", title: product.title, asin: product.asin, cost: hasCost ? c : undefined, roi, notes: notes.trim() || undefined, folder },
       ...t,
     ]);
     setLookup(null);
-    setToast(hasCost ? `Kept at ${money(c)}. Scan the next one.` : "Kept. Add the price later in the trip.");
+    setToast(hasCost ? `Kept at ${money(c)} in ${folder}.` : `Kept in ${folder}. Add the price later.`);
   };
 
   const skip = (product: Product, code: string, source: Source) => {
@@ -150,73 +187,85 @@ export function App() {
 
   const submitManual = (e: FormEvent) => {
     e.preventDefault();
-    const text = manual.trim();
-    if (!text) return;
+    const parsed = parseInput(manual);
+    if (!parsed) return;
     setManual("");
-    startLookup(text, "typed");
+    startLookup(parsed.code, parsed.source);
   };
 
-  const kept = trip.filter((i) => i.status === "kept");
-  const invested = kept.reduce((s, i) => s + (i.cost ?? 0), 0);
+  const openAlert = (a: Alert) => {
+    setAlerts((list) => list.map((x) => (x.id === a.id ? { ...x, read: true } : x)));
+    setTab("scan");
+    startLookup(a.asin, "alert", a.context);
+  };
 
-  if (view === "trip") {
+  const openTripItem = (i: TripItem) => {
+    setTab("scan");
+    startLookup(i.asin ?? i.code, i.source);
+  };
+
+  const clearEverything = () => {
+    Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+    setTrip([]);
+    setNotesByCode({});
+    setAlerts(seedAlerts());
+    setAccount(null);
+    setLookup(null);
+    setToast("Account deleted on this device.");
+  };
+
+  if (!account) {
     return (
       <div className="app">
-        <TripView
-          items={trip}
-          onBack={() => setView("scan")}
-          onOpen={(i) => {
-            setView("scan");
-            startLookup(i.code, i.source);
-          }}
-          onRetry={(i) => {
-            setTrip((t) => t.filter((x) => x.id !== i.id));
-            setView("scan");
-            startLookup(i.code, i.source);
-          }}
-          onClear={() => {
-            setTrip([]);
-            setToast("Trip cleared.");
-          }}
-          onExport={() => setToast("Lands in Folders once the endpoint exists.")}
-        />
-        {toast && <Toast text={toast} />}
+        <SignIn onSignedIn={(email) => setAccount({ email })} />
       </div>
     );
   }
 
+  const kept = trip.filter((i) => i.status === "kept");
+  const invested = kept.reduce((s, i) => s + (i.cost ?? 0), 0);
+  const unread = alerts.filter((a) => !a.read).length;
+
   return (
     <div className="app">
-      <Viewfinder videoRef={videoRef} camera={camera} onAllow={() => setCameraAllowed(true)} />
-
-      <header className="topbar">
-        <span className="brand">
-          Stealth Scan<small>prototype</small>
-        </span>
-        <button className="trip-pill" onClick={() => setView("trip")}>
-          Trip <b>{kept.length}</b> kept <b>{money(invested)}</b>
-        </button>
-      </header>
-
-      {!lookup && (
-        <div className="dock">
-          <div className="status">
-            {camera === "scanning" && "camera live"}
-            {camera === "starting" && "starting camera"}
-            {camera === "prompt" && "camera off"}
-            {(camera === "denied" || camera === "error") && "camera unavailable, type a code"}
-            {camera === "paused" && "paused"}
-          </div>
-          <form onSubmit={submitManual}>
-            <input inputMode="numeric" placeholder="Type a UPC, EAN or ASIN" value={manual} onChange={(e) => setManual(e.target.value)} aria-label="Barcode or ASIN" />
-            <button className="btn btn-primary" type="submit">
-              Look up
+      {tab === "scan" && (
+        <>
+          <Viewfinder videoRef={videoRef} camera={camera} onAllow={() => setCameraAllowed(true)} />
+          <header className="topbar">
+            <span className="brand">
+              Stealth Seller<small>prototype</small>
+            </span>
+            <button className="trip-pill" onClick={() => setTab("trip")}>
+              Trip <b>{kept.length}</b> kept <b>{money(invested)}</b>
             </button>
-          </form>
-        </div>
+          </header>
+          {!lookup && (
+            <div className="dock">
+              <div className="status">
+                {camera === "scanning" && "camera live"}
+                {camera === "starting" && "starting camera"}
+                {camera === "prompt" && "camera off"}
+                {(camera === "denied" || camera === "error") && "camera unavailable, type a code"}
+                {camera === "paused" && "paused"}
+              </div>
+              <form onSubmit={submitManual}>
+                <input placeholder="UPC, EAN, ASIN or an Amazon link" value={manual} onChange={(e) => setManual(e.target.value)} aria-label="Barcode, ASIN or Amazon link" autoCapitalize="characters" autoCorrect="off" />
+                <button className="btn btn-primary" type="submit">
+                  Look up
+                </button>
+              </form>
+            </div>
+          )}
+        </>
       )}
 
-      {lookup?.state === "resolving" && (
+      {tab === "trip" && <TripView items={trip} onOpen={openTripItem} onRetry={(i) => { setTrip((t) => t.filter((x) => x.id !== i.id)); openTripItem(i); }} onClear={() => { setTrip([]); setToast("Trip cleared."); }} onExport={() => setToast(`${kept.length} items land in Folders once the endpoint exists.`)} />}
+
+      {tab === "alerts" && <AlertsView alerts={alerts} onOpen={openAlert} onMarkAll={() => setAlerts((l) => l.map((a) => ({ ...a, read: true })))} />}
+
+      {tab === "account" && <AccountView email={account.email} notifications={notif} onNotifications={setNotif} onSignOut={() => setAccount(null)} onDelete={clearEverything} />}
+
+      {tab === "scan" && lookup?.state === "resolving" && (
         <div className="sheet">
           <div className="grab" />
           <div className="sheet-head">
@@ -227,39 +276,43 @@ export function App() {
         </div>
       )}
 
-      {lookup?.state === "found" && (
+      {tab === "scan" && lookup?.state === "found" && (
         <ResultSheet
           product={lookup.product}
           code={lookup.code}
           source={lookup.source}
           resolvedMs={lookup.resolvedMs}
           alternatives={lookup.alternatives}
+          alert={lookup.alert}
           cost={cost}
           onCost={setCost}
           notes={notes}
           onNotes={setNotes}
           notesRemembered={Boolean(notesByCode[lookup.code])}
+          extra={<FolderPicker value={folder} onChange={setFolder} />}
           onKeep={() => keep(lookup.product, lookup.code, lookup.source)}
           onSkip={() => skip(lookup.product, lookup.code, lookup.source)}
           onPickOther={() =>
-            setLookup({ code: lookup.code, source: lookup.source, startedAt: lookup.startedAt, state: "multi", candidates: [lookup.product, ...(lookup.alternatives ?? [])], resolvedMs: lookup.resolvedMs })
+            setLookup({ code: lookup.code, source: lookup.source, startedAt: lookup.startedAt, state: "multi", candidates: [lookup.product, ...(lookup.alternatives ?? [])], resolvedMs: lookup.resolvedMs, alert: lookup.alert })
           }
           onClose={() => setLookup(null)}
         />
       )}
 
-      {lookup?.state === "multi" && (
+      {tab === "scan" && lookup?.state === "multi" && (
         <PickerSheet
           candidates={lookup.candidates}
           code={lookup.code}
           onPick={(p) =>
-            setLookup({ code: lookup.code, source: lookup.source, startedAt: lookup.startedAt, state: "found", product: p, resolvedMs: lookup.resolvedMs, alternatives: lookup.candidates.filter((c) => c.asin !== p.asin) })
+            setLookup({ code: lookup.code, source: lookup.source, startedAt: lookup.startedAt, state: "found", product: p, resolvedMs: lookup.resolvedMs, alternatives: lookup.candidates.filter((c) => c.asin !== p.asin), alert: lookup.alert })
           }
           onClose={() => setLookup(null)}
         />
       )}
 
-      {lookup?.state === "notfound" && <NotFoundSheet code={lookup.code} onKeepAnyway={() => keepNotFound(lookup.code, lookup.source)} onClose={() => setLookup(null)} />}
+      {tab === "scan" && lookup?.state === "notfound" && <NotFoundSheet code={lookup.code} onKeepAnyway={() => keepNotFound(lookup.code, lookup.source)} onClose={() => setLookup(null)} />}
+
+      <Tabs tab={tab} onTab={(t) => { setTab(t); if (t !== "scan") setLookup(null); }} unread={unread} />
 
       {toast && <Toast text={toast} />}
     </div>

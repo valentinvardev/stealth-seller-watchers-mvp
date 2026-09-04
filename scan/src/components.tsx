@@ -1,21 +1,15 @@
 import { useState, type ReactNode, type RefObject } from "react";
 import type { Product } from "./resolve";
-import type { Camera, TripItem } from "./types";
+import type { AlertContext, Camera, Source, TripItem } from "./types";
 import { SETTINGS, caveats, evaluate, perSeller, priceRead, sellPriceUsed, verdictFor } from "./verdict";
 
 export const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const time = (t: number) => new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-export function Viewfinder({
-  videoRef,
-  camera,
-  onAllow,
-}: {
-  videoRef: RefObject<HTMLVideoElement | null>;
-  camera: Camera;
-  onAllow: () => void;
-}) {
+export const SOURCE_LABEL: Record<Source, string> = { scan: "scanned", typed: "typed", shared: "shared", alert: "from alert" };
+
+export function Viewfinder({ videoRef, camera, onAllow }: { videoRef: RefObject<HTMLVideoElement | null>; camera: Camera; onAllow: () => void }) {
   return (
     <div className="vf">
       <video ref={videoRef} playsInline muted autoPlay />
@@ -29,7 +23,7 @@ export function Viewfinder({
         <div className="overlay">
           <div className="box">
             <h2>Scan in the aisle</h2>
-            <p>Stealth Scan reads barcodes with the camera. Nothing is recorded or uploaded.</p>
+            <p>Stealth Seller reads barcodes with the camera. Nothing is recorded or uploaded.</p>
             <button className="btn btn-primary btn-block" onClick={onAllow}>
               Allow camera
             </button>
@@ -98,17 +92,35 @@ function EligibilityPill({ p }: { p: Product }) {
   return <span className="pill tone-neutral">unknown</span>;
 }
 
+function AlertBanner({ a }: { a: AlertContext }) {
+  return (
+    <div className="alert-banner">
+      {a.kind === "price_drop" && a.from !== undefined && a.to !== undefined ? (
+        <>
+          Price dropped <b>{money(a.from)}</b> → <b>{money(a.to)}</b> at {a.store}, checked {a.checkedAgo}.
+        </>
+      ) : (
+        <>
+          Back in stock at {a.store}, checked {a.checkedAgo}.
+        </>
+      )}
+    </div>
+  );
+}
+
 export function ResultSheet({
   product,
   code,
   source,
   resolvedMs,
   alternatives,
+  alert,
   cost,
   onCost,
   notes,
   onNotes,
   notesRemembered,
+  extra,
   onKeep,
   onSkip,
   onPickOther,
@@ -116,14 +128,16 @@ export function ResultSheet({
 }: {
   product: Product;
   code: string;
-  source: "scan" | "typed";
+  source: Source;
   resolvedMs: number;
   alternatives?: Product[];
+  alert?: AlertContext;
   cost: string;
   onCost: (v: string) => void;
   notes: string;
   onNotes: (v: string) => void;
   notesRemembered: boolean;
+  extra?: ReactNode;
   onKeep: () => void;
   onSkip: () => void;
   onPickOther: () => void;
@@ -144,7 +158,7 @@ export function ResultSheet({
       onClose={onClose}
       head={
         <>
-          <span className="pill tone-neutral">{source === "scan" ? "scanned" : "typed"}</span>
+          <span className="pill tone-neutral">{SOURCE_LABEL[source]}</span>
           <span className="mono">{code}</span>
           <span className="mono">· {Math.round(resolvedMs)} ms</span>
         </>
@@ -154,6 +168,8 @@ export function ResultSheet({
       <div className="meta">
         {product.brand} · {product.category} · {product.rating} stars ({product.reviews.toLocaleString("en-US")})
       </div>
+
+      {alert && <AlertBanner a={alert} />}
 
       <div className={`verdict tone-${v.tone}`}>
         <span className="h">{v.headline}</span>
@@ -233,6 +249,8 @@ export function ResultSheet({
         )}
       </div>
 
+      {extra}
+
       <div className="actions">
         <button className="btn btn-primary" onClick={onKeep}>
           {hasCost ? "Keep" : "Keep without price"}
@@ -273,9 +291,7 @@ export function NotFoundSheet({ code, onKeepAnyway, onClose }: { code: string; o
   return (
     <Sheet onClose={onClose} head={<span className="mono">{code}</span>}>
       <div className="title">Not on Amazon</div>
-      <div className="meta">
-        {isIssn ? "That is a magazine or newspaper barcode. They are not listed by code." : "No listing carries this barcode. Store brands and new releases often lack one."}
-      </div>
+      <div className="meta">{isIssn ? "That is a magazine or newspaper barcode. They are not listed by code." : "No listing carries this barcode. Store brands and new releases often lack one."}</div>
       <div className="actions" style={{ gridTemplateColumns: "1fr 1fr" }}>
         <a className="btn" href={`https://www.amazon.com/s?k=${encodeURIComponent(code)}`} target="_blank" rel="noreferrer" style={{ textAlign: "center", textDecoration: "none" }}>
           Search by name
@@ -300,14 +316,12 @@ const STATUS_LABEL: Record<TripItem["status"], { text: string; tone: string }> =
 
 export function TripView({
   items,
-  onBack,
   onOpen,
   onRetry,
   onClear,
   onExport,
 }: {
   items: TripItem[];
-  onBack: () => void;
   onOpen: (item: TripItem) => void;
   onRetry: (item: TripItem) => void;
   onClear: () => void;
@@ -317,11 +331,8 @@ export function TripView({
   const skipped = items.filter((i) => i.status === "skipped").length;
   const invested = kept.reduce((s, i) => s + (i.cost ?? 0), 0);
   return (
-    <div className="trip">
-      <div className="trip-top">
-        <button className="btn btn-sm" onClick={onBack}>
-          Back to scan
-        </button>
+    <div className="screen list">
+      <div className="screen-top">
         <h1>Today's trip</h1>
       </div>
       <div className="trip-stats">
@@ -338,7 +349,7 @@ export function TripView({
           <div className="l">to buy</div>
         </div>
       </div>
-      {items.length === 0 && <div className="empty">Nothing scanned yet.</div>}
+      {items.length === 0 && <div className="empty">Nothing looked up yet. Scan, type or paste a link on the Scan tab.</div>}
       {items.map((i) => {
         const s = STATUS_LABEL[i.status];
         return (
@@ -350,7 +361,8 @@ export function TripView({
               <small>{i.roi !== undefined ? `${Math.round(i.roi * 100)}% ROI` : time(i.at)}</small>
             </span>
             <span className="m">
-              {i.source === "scan" ? "scanned" : "typed"} · {i.code} · {time(i.at)}
+              {SOURCE_LABEL[i.source]} · {i.code} · {time(i.at)}
+              {i.folder ? ` · ${i.folder}` : ""}
               {i.notes ? ` · ${i.notes}` : ""}
             </span>
             {i.status === "pending" && (
@@ -371,7 +383,7 @@ export function TripView({
       {items.length > 0 && (
         <div className="trip-actions">
           <button className="btn btn-primary" onClick={onExport}>
-            Send kept to a folder
+            Send kept to folders
           </button>
           <button className="btn" onClick={onClear}>
             Clear
