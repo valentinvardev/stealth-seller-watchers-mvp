@@ -1,0 +1,1 @@
+import{j as t}from"./radix-DtfScoav.js";import{A as e}from"./admin-placeholder-4GEiHLiG.js";import{A as r}from"./activity-jWwAQC4u.js";import"./vendor-D99pNYfg.js";import"./index-CyzFgvN0.js";function n(){return t.jsx(e,{icon:t.jsx(r,{className:"h-5 w-5"}),title:"System health",subtitle:"Scrape queue, minter, Keepa tokens and error rate. Not wired up yet."})}export{n as default};

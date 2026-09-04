@@ -1,0 +1,1 @@
+import{a as o}from"./vendor-D99pNYfg.js";const a="sidebar-collapsed";let t=typeof window<"u"&&localStorage.getItem(a)==="true";const r=new Set;function s(e){return r.add(e),()=>{r.delete(e)}}function c(){t=!t;try{localStorage.setItem(a,String(t))}catch{}r.forEach(e=>e())}function l(){return o.useSyncExternalStore(s,()=>t,()=>!1)}export{c as t,l as u};

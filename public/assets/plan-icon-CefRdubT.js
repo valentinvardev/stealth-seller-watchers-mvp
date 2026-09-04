@@ -1,0 +1,1 @@
+import{j as t}from"./radix-DtfScoav.js";import{P as a}from"./plans-DP0seVYF.js";import{o as m}from"./index-CyzFgvN0.js";function p({tier:o,className:s}){const{Icon:r,className:n}=a[o];return t.jsx(r,{className:m(n,s)})}export{p as P};
