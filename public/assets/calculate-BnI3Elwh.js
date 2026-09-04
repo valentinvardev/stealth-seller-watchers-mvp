@@ -1,0 +1,1 @@
+function b({cost:e,shipCost:t,feesAt:u,seed:a}){let n=a>0?a:e+t;for(let i=0;i<8;i++){const r=e+t+u(n);if(Math.abs(r-n)<.005)return r;n=r}return n}function c(e,t){return Math.ceil(1440/e*t)}export{b,c as w};
