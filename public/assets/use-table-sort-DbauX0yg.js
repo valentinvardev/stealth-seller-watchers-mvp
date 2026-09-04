@@ -1,0 +1,1 @@
+import{a as y}from"./vendor-BtbhsoCX.js";function b(s){const r=(s==null?void 0:s.sortDir)??"desc",[n,t]=y.useState((s==null?void 0:s.sortBy)??null),[o,c]=y.useState(r),i=()=>{t((s==null?void 0:s.sortBy)??null),c(r)};return{sortBy:n,sortDir:o,setSort:e=>{n!==e?(t(e),c("desc")):o==="desc"?c("asc"):i()},clearSort:i,setSortState:(e,B)=>{t(e),c(B)}}}export{b as u};

@@ -1,0 +1,1 @@
+import{a as o}from"./vendor-BtbhsoCX.js";function s(e,t){const[n,u]=o.useState(e);return o.useEffect(()=>{const r=window.setTimeout(()=>u(e),t);return()=>window.clearTimeout(r)},[e,t]),n}export{s as u};
