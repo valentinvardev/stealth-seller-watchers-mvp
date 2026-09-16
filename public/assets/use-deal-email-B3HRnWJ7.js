@@ -1,0 +1,1 @@
+import{D as a,g as r}from"./deals-api-D1WqWlQT.js";import{f as i}from"./index-DSuPphnM.js";function u(s){const e=i({queryKey:[...a,"emails","get",s??null],queryFn:()=>r(s),enabled:!!s,staleTime:3e5,refetchOnWindowFocus:!1});return{email:e.data??null,isMissing:e.isSuccess&&e.data===null,isLoading:e.isLoading,isError:e.isError}}export{u};

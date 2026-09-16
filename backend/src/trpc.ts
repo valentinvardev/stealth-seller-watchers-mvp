@@ -18,6 +18,7 @@ import {
   watchlistRouter,
 } from "./overview-routers";
 import { mentionsRouter } from "./mentions-router";
+import { dealsRouter } from "./deals-routers";
 
 const PollIntervalEnum = z.union([z.literal(120), z.literal(180), z.literal(360), z.literal(1440)]);
 
@@ -294,6 +295,8 @@ export const router = t.router({
   billing: billingRouter,
   notifications: notificationsRouter,
   mentions: mentionsRouter,
+  // the deals-engine API, stubbed over the seed; see deals-routers.ts
+  deals: dealsRouter,
   ...shellRouters,
 });
 

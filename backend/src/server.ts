@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { initializeDemo } from "./db";
+import { getEmailHtml, initializeDealsDemo } from "./deals-seed";
 import { router } from "./trpc";
 
 const app = express();
@@ -12,6 +13,12 @@ const PORT = process.env.PORT || 3000;
 // Initialize demo data
 const demoUserId = initializeDemo();
 console.log(`Demo user ID: ${demoUserId}`);
+initializeDealsDemo();
+
+// Origin allowed to frame the promo email HTML. On Vercel the SPA and the API
+// share an origin, so 'self' covers it; this is for the frontend dev server
+// (:3002) pointed at this backend through VITE_API_URL.
+const DEALS_APP_ORIGIN = process.env.APP_ORIGIN ?? "http://localhost:3002";
 
 // The frontend sends credentials: "include" on every tRPC and auth call. A
 // wildcard Access-Control-Allow-Origin is rejected by the browser for
@@ -74,6 +81,27 @@ app.use(
 // Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+// Sanitized promo email HTML for the Deals pages, with the CSP the deals-engine
+// API sends (apps/api/src/server.ts): images and inline styles only, framed by
+// our own app only, no forms. The sandbox has no blob store, so the body comes
+// out of deals-seed. Registered before the SPA fallback, which would otherwise
+// answer this extensionless path with index.html.
+app.get("/emails/:id/html", (req, res) => {
+  const id = req.params.id;
+  if (!/^[0-9a-f-]{36}$/.test(id)) return res.status(400).send("bad id");
+  const html = getEmailHtml(id);
+  if (!html) return res.status(404).send("no html");
+  res.setHeader("content-type", "text/html; charset=utf-8");
+  res.setHeader(
+    "content-security-policy",
+    `default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; font-src https: data:; frame-ancestors 'self' ${DEALS_APP_ORIGIN}; form-action 'none'; base-uri 'none'`,
+  );
+  res.setHeader("x-content-type-options", "nosniff");
+  res.setHeader("referrer-policy", "no-referrer");
+  res.setHeader("cache-control", "private, max-age=3600");
+  return res.send(html);
 });
 
 // Better Auth session stub. The real frontend gates every protected route on

@@ -17369,8 +17369,8 @@ var require_escape_html = __commonJS({
   "node_modules/escape-html/index.js"(exports2, module2) {
     "use strict";
     var matchHtmlRegExp = /["'&<>]/;
-    module2.exports = escapeHtml;
-    function escapeHtml(string) {
+    module2.exports = escapeHtml2;
+    function escapeHtml2(string) {
       var str = "" + string;
       var match = matchHtmlRegExp.exec(str);
       if (!match) {
@@ -17501,7 +17501,7 @@ var require_finalhandler = __commonJS({
     "use strict";
     var debug = require_src()("finalhandler");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var onFinished = require_on_finished();
     var parseUrl = require_parseurl();
     var statuses = require_statuses();
@@ -17513,7 +17513,7 @@ var require_finalhandler = __commonJS({
     };
     var isFinished = onFinished.isFinished;
     function createHtmlDocument(message) {
-      var body = escapeHtml(message).replace(NEWLINE_REGEXP, "<br>").replace(DOUBLE_SPACE_REGEXP, " &nbsp;");
+      var body = escapeHtml2(message).replace(NEWLINE_REGEXP, "<br>").replace(DOUBLE_SPACE_REGEXP, " &nbsp;");
       return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>' + body + "</pre>\n</body>\n</html>\n";
     }
     module2.exports = finalhandler;
@@ -19169,7 +19169,7 @@ var require_send = __commonJS({
     var deprecate = require_depd()("send");
     var destroy = require_destroy();
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
     var fs2 = require("fs");
@@ -19269,7 +19269,7 @@ var require_send = __commonJS({
       }
       var res = this.res;
       var msg = statuses.message[status] || String(status);
-      var doc = createHtmlDocument("Error", escapeHtml(msg));
+      var doc = createHtmlDocument("Error", escapeHtml2(msg));
       clearHeaders(res);
       if (err && err.headers) {
         setHeaders(res, err.headers);
@@ -19369,7 +19369,7 @@ var require_send = __commonJS({
         return;
       }
       var loc = encodeUrl(collapseLeadingSlashes(this.path + "/"));
-      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
       res.statusCode = 301;
       res.setHeader("Content-Type", "text/html; charset=UTF-8");
       res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -21958,7 +21958,7 @@ var require_response = __commonJS({
     var createError = require_http_errors();
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var http = require("http");
     var isAbsolute = require_utils2().isAbsolute;
     var onFinished = require_on_finished();
@@ -22364,7 +22364,7 @@ var require_response = __commonJS({
           body = statuses.message[status] + ". Redirecting to " + address;
         },
         html: function() {
-          var u = escapeHtml(address);
+          var u = escapeHtml2(address);
           body = "<p>" + statuses.message[status] + ". Redirecting to " + u + "</p>";
         },
         default: function() {
@@ -22496,7 +22496,7 @@ var require_serve_static = __commonJS({
   "node_modules/serve-static/index.js"(exports2, module2) {
     "use strict";
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var parseUrl = require_parseurl();
     var resolve = require("path").resolve;
     var send = require_send();
@@ -22583,7 +22583,7 @@ var require_serve_static = __commonJS({
         originalUrl.path = null;
         originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + "/");
         var loc = encodeUrl(url.format(originalUrl));
-        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
         res.statusCode = 301;
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
         res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -24374,6 +24374,373 @@ function findOrCreateTarget(targetType, asin, marketplace, normalizedUrl) {
   };
   database.targets.set(id, target);
   return target;
+}
+
+// src/deals-seed.ts
+var HOUR_MS3 = 60 * 60 * 1e3;
+var DAY_MS2 = 24 * HOUR_MS3;
+var anchor3 = Math.floor(Date.now() / HOUR_MS3) * HOUR_MS3;
+var deals = {
+  brands: [],
+  emails: [],
+  offers: [],
+  // email id -> sanitized HTML body; the blob store the real API reads from
+  html: /* @__PURE__ */ new Map(),
+  // the demo seller's follows, by brand slug. Per instance memory like
+  // everything else here; seeded from FROM_STEALTH_SEED on boot.
+  follows: /* @__PURE__ */ new Set()
+};
+function mulberry32(seed) {
+  return () => {
+    seed |= 0;
+    seed = seed + 1831565813 | 0;
+    let t2 = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t2 = t2 + Math.imul(t2 ^ t2 >>> 7, 61 | t2) ^ t2;
+    return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
+  };
+}
+function uuidFrom(rng2) {
+  const chars = [];
+  for (let i = 0; i < 32; i += 1) chars.push(Math.floor(rng2() * 16).toString(16));
+  chars[12] = "4";
+  chars[16] = "89ab"[Math.floor(rng2() * 4)];
+  const s = chars.join("");
+  return `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20)}`;
+}
+function slugify(name) {
+  return name.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+}
+var BRAND_SEED = [
+  { name: "Walmart", domain: "walmart.com", category: "general", status: "confirmed", accent: "#0053E2", followers: 412 },
+  { name: "Target", domain: "target.com", category: "general", status: "confirmed", accent: "#CC0100", followers: 388 },
+  { name: "Kohl's", domain: "kohls.com", category: "department", status: "confirmed", accent: "#870035", followers: 301 },
+  { name: "Macy's", domain: "macys.com", category: "department", status: "confirmed", accent: "#E11B2B", followers: 264 },
+  { name: "JCPenney", domain: "jcpenney.com", category: "department", status: "confirmed", accent: "#C8102E", followers: 158 },
+  { name: "Sephora", domain: "sephora.com", category: "beauty", status: "confirmed", accent: "#000000", followers: 233 },
+  { name: "Ulta Beauty", domain: "ulta.com", category: "beauty", status: "confirmed", accent: "#F97316", followers: 219 },
+  { name: "Bath & Body Works", domain: "bathandbodyworks.com", category: "beauty", status: "confirmed", accent: "#4F8ABE", followers: 176 },
+  { name: "Best Buy", domain: "bestbuy.com", category: "electronics", status: "confirmed", accent: "#0046BE", followers: 205 },
+  { name: "GameStop", domain: "gamestop.com", category: "electronics", status: "subscribed", accent: "#D42026", followers: 97 },
+  { name: "Home Depot", domain: "homedepot.com", category: "home", status: "confirmed", accent: "#F96302", followers: 142 },
+  { name: "Nike", domain: "nike.com", category: "apparel", status: "confirmed", accent: "#111111", followers: 187 },
+  { name: "Crocs", domain: "crocs.com", category: "apparel", status: "confirmed", accent: "#1E8E3E", followers: 121 },
+  { name: "Old Navy", domain: "oldnavy.gap.com", category: "apparel", status: "confirmed", accent: "#003764", followers: 168 },
+  { name: "Michaels", domain: "michaels.com", category: "crafts", status: "subscribed", accent: "#D6001C", followers: 64 },
+  { name: "Chewy", domain: "chewy.com", category: "pets", status: "pending", accent: "#1C49C2", followers: 12 },
+  // second wave, the community suggestions on the onboarding screen
+  { name: "Dick's Sporting Goods", domain: "dickssportinggoods.com", category: "sports", status: "confirmed", accent: "#038D75", followers: 212 },
+  { name: "Walgreens", domain: "walgreens.com", category: "pharmacy", status: "confirmed", accent: "#E31837", followers: 180 },
+  { name: "LEGO", domain: "lego.com", category: "toys", status: "confirmed", accent: "#FFD504", followers: 154 }
+];
+var ONBOARDING_CATEGORIES = [
+  { id: "beauty", label: "Beauty", selected: true },
+  { id: "home", label: "Home", selected: true },
+  { id: "electronics", label: "Electronics", selected: true },
+  { id: "toys", label: "Toys", selected: false },
+  { id: "apparel", label: "Apparel", selected: false },
+  { id: "grocery", label: "Grocery", selected: false },
+  { id: "pets", label: "Pets", selected: false },
+  { id: "office", label: "Office", selected: false }
+];
+var FROM_STEALTH_SEED = [
+  { brand: "Kohl's", reason: { kind: "saved", count: 14 }, following: true, codesLive: 1, bestPercent30d: 30, emails30d: 7, headline: "30% off", note: null, categories: ["home", "apparel"] },
+  { brand: "Target", reason: { kind: "found", count: 9 }, following: true, codesLive: 1, bestPercent30d: 40, emails30d: 5, headline: "up to 40%", note: null, categories: ["home", "grocery", "toys"] },
+  { brand: "Walmart", reason: { kind: "found", count: 7 }, following: true, codesLive: 0, bestPercent30d: null, emails30d: 4, headline: null, note: "Sales, rarely codes", categories: ["home", "grocery", "electronics"] },
+  { brand: "Ulta Beauty", reason: { kind: "watching", count: 3 }, following: true, codesLive: 2, bestPercent30d: 50, emails30d: 12, headline: "50% off", note: null, categories: ["beauty"] },
+  { brand: "Sephora", reason: { kind: "saved", count: 4 }, following: true, codesLive: 1, bestPercent30d: 20, emails30d: 6, headline: "20% off", note: null, categories: ["beauty"] },
+  { brand: "Best Buy", reason: { kind: "found", count: 2 }, following: true, codesLive: 0, bestPercent30d: null, emails30d: 5, headline: null, note: "Last sale 2 days ago", categories: ["electronics"] },
+  { brand: "Macy's", reason: { kind: "saved", count: 2 }, following: true, codesLive: 1, bestPercent30d: 70, emails30d: 8, headline: "70% off", note: null, categories: ["home", "apparel", "beauty"] },
+  { brand: "Bath & Body Works", reason: { kind: "found", count: 1 }, following: false, codesLive: 0, bestPercent30d: null, emails30d: 9, headline: null, note: "Candle Day in 4 days", categories: ["beauty", "home"] }
+];
+var BY_CATEGORY_SEED = [
+  { brand: "Dick's Sporting Goods", reason: { kind: "followers", count: 212 }, following: false, codesLive: 3, bestPercent30d: 25, emails30d: 9, headline: null, note: null, categories: ["home", "apparel"] },
+  { brand: "Walgreens", reason: { kind: "followers", count: 180 }, following: false, codesLive: 2, bestPercent30d: 25, emails30d: 6, headline: "25% off", note: null, categories: ["beauty", "grocery"] },
+  { brand: "LEGO", reason: { kind: "followers", count: 154 }, following: false, codesLive: 0, bestPercent30d: null, emails30d: 3, headline: null, note: "Sales, rarely codes", categories: ["home", "toys"] },
+  { brand: "GameStop", reason: { kind: "followers", count: 97 }, following: false, codesLive: 1, bestPercent30d: 20, emails30d: 3, headline: "$10 off", note: null, categories: ["electronics", "toys"] },
+  { brand: "Nike", reason: { kind: "followers", count: 187 }, following: false, codesLive: 2, bestPercent30d: 25, emails30d: 4, headline: "25% off", note: null, categories: ["apparel"] },
+  { brand: "Old Navy", reason: { kind: "followers", count: 168 }, following: false, codesLive: 3, bestPercent30d: 40, emails30d: 5, headline: "40% off", note: null, categories: ["apparel"] },
+  { brand: "Crocs", reason: { kind: "followers", count: 121 }, following: false, codesLive: 2, bestPercent30d: 25, emails30d: 4, headline: "25% off", note: null, categories: ["apparel"] },
+  { brand: "Michaels", reason: { kind: "followers", count: 64 }, following: false, codesLive: 1, bestPercent30d: 40, emails30d: 2, headline: "40% off", note: null, categories: ["office"] },
+  { brand: "Chewy", reason: { kind: "followers", count: 12 }, following: false, codesLive: 0, bestPercent30d: null, emails30d: 0, headline: null, note: null, categories: ["pets"], lastEmailAtOverride: new Date(anchor3 - 45 * DAY_MS2) }
+];
+var CAMPAIGNS = [
+  // Kohl's
+  { brand: "Kohl's", day: 0.3, subject: "30% off with code FALL30, plus Kohl's Cash!", preheader: "Sitewide savings end Sunday. Earn $10 Kohl's Cash for every $50 you spend.", body: "Fall is here and so is your biggest offer of the season. Take 30% off sitewide with promo code FALL30, and earn $10 Kohl's Cash for every $50 you spend.", offers: [{ kind: "percent", value: 30, code: "FALL30", scope: "sitewide", endsIn: 3 }, { kind: "gift_card", value: 10, minPurchase: 50, endsIn: 3 }] },
+  { brand: "Kohl's", day: 2.5, subject: "Extra 20% off your order: use code SAVE20", preheader: "Stack it on sale prices. Online only, ends Tuesday.", body: "Take an extra 20% off your entire order with promo code SAVE20 at checkout. Stacks on top of sale and clearance prices.", offers: [{ kind: "percent", value: 20, code: "SAVE20", scope: "sitewide", endsIn: 2 }] },
+  { brand: "Kohl's", day: 6, subject: "Home sale: up to 50% off bedding and bath", preheader: "Plus free shipping on orders of $49 or more.", body: "Refresh every room. Up to 50% off bedding, bath towels, kitchen electrics and more, with free shipping on orders of $49 or more.", offers: [{ kind: "percent", value: 50, scope: "category", categories: ["home"], endsIn: 4 }, { kind: "free_shipping", minPurchase: 49, endsIn: 4 }] },
+  { brand: "Kohl's", day: 11, subject: "Your $10 Kohl's Cash is here", preheader: "Spend it by Thursday, in store or online.", body: "You earned $10 Kohl's Cash on your last order. Redeem it on anything in store or online through Thursday.", offers: [{ kind: "gift_card", value: 10, endsIn: 4 }] },
+  { brand: "Kohl's", day: 17, subject: "Flash sale: 40% off Nike and Under Armour", preheader: "Today only. Sneakers, hoodies, leggings and more.", body: "One day only: 40% off Nike and Under Armour apparel and footwear for the whole family. Sale ends tonight.", offers: [{ kind: "percent", value: 40, scope: "category", categories: ["activewear"], endsIn: 1 }] },
+  { brand: "Kohl's", day: 24, subject: "Friends & Family: 25% off with code FAMILY25", preheader: "Five days of savings on everything you love.", body: "It's Friends & Family time. Take 25% off with promo code FAMILY25 through Sunday, in store and online.", offers: [{ kind: "percent", value: 25, code: "FAMILY25", scope: "sitewide", endsIn: 5 }] },
+  { brand: "Kohl's", day: 29, subject: "Labor Day: up to 60% off + extra 15% with code LABORDAY", preheader: "Doorbusters on apparel, home and toys.", body: "Save up to 60% on select apparel, home and toys, then take an extra 15% off with promo code LABORDAY. Ends Monday.", offers: [{ kind: "percent", value: 60, scope: "category", endsIn: 2 }, { kind: "percent", value: 15, code: "LABORDAY", scope: "sitewide", endsIn: 2 }] },
+  // Target
+  { brand: "Target", day: 0.8, subject: "Circle Week starts now: save up to 40% on home, tech and more", preheader: "Members-only deals all week long.", body: "Target Circle Week is here. Save up to 40% on home, tech, apparel and toys through Saturday.", offers: [{ kind: "percent", value: 40, scope: "category", endsIn: 6 }] },
+  { brand: "Target", day: 4, subject: "Buy 2 get 1 free on toys, books and movies", preheader: "Mix and match. Ends Sunday.", body: "Buy two, get one free on toys, books, movies and video games. Mix and match across categories, online and in store.", offers: [{ kind: "bogo", scope: "category", categories: ["toys", "books", "movies"], endsIn: 3 }] },
+  { brand: "Target", day: 9, subject: "$10 gift card when you spend $50 on household essentials", preheader: "Paper towels, laundry, cleaning and more.", body: "Get a $10 Target gift card when you spend $50 or more on household essentials. Offer valid through Saturday.", offers: [{ kind: "gift_card", value: 10, minPurchase: 50, scope: "category", categories: ["household"], endsIn: 6 }] },
+  { brand: "Target", day: 15, subject: "20% off one pantry item with Target Circle", preheader: "Snacks, coffee, cereal, your pick.", body: "Save 20% on one pantry item of your choice with Target Circle. Add the offer in the app and it applies at checkout.", offers: [{ kind: "percent", value: 20, scope: "product", categories: ["grocery"], endsIn: 7 }] },
+  { brand: "Target", day: 22, subject: "Back-to-school clearance: up to 70% off", preheader: "Backpacks, lunch boxes and supplies while they last.", body: "Back-to-school clearance is on. Up to 70% off backpacks, lunch boxes, notebooks and dorm essentials while supplies last.", offers: [{ kind: "clearance", scope: "category", categories: ["school"], endsIn: 6 }, { kind: "percent", value: 70, scope: "category", categories: ["school"], endsIn: 6 }] },
+  { brand: "Target", day: 27, subject: "Free same-day delivery on $35+ this week", preheader: "No membership needed, through Sunday.", body: "Get free same-day delivery on orders of $35 or more all week, no membership required.", offers: [{ kind: "free_shipping", minPurchase: 35, endsIn: 6 }] },
+  // Walmart
+  { brand: "Walmart", day: 1.2, subject: "Rollbacks on everything for fall", preheader: "Up to 25% off home, apparel and outdoor.", body: "New rollbacks just dropped. Save up to 25% on fall home decor, apparel, outdoor gear and more.", offers: [{ kind: "percent", value: 25, scope: "category", endsIn: 10 }] },
+  { brand: "Walmart", day: 5.5, subject: "Flash Deals: up to 65% off electronics, today only", preheader: "TVs, laptops, headphones. Gone at midnight.", body: "Flash Deals are live. Up to 65% off TVs, laptops, tablets and headphones, today only while supplies last.", offers: [{ kind: "percent", value: 65, scope: "category", categories: ["electronics"], endsIn: 0 }] },
+  { brand: "Walmart", day: 13, subject: "Free shipping, no minimum, with Walmart+", preheader: "Try it free for 30 days.", body: "Walmart+ members get free shipping with no order minimum, plus free delivery from your store. Start a free 30-day trial.", offers: [{ kind: "free_shipping", endsIn: 14 }] },
+  { brand: "Walmart", day: 19, subject: "Clearance: thousands of items under $10", preheader: "Home, toys, beauty and more.", body: "Thousands of clearance items are now under $10 across home, toys, beauty and pantry. Shop before they're gone.", offers: [{ kind: "clearance", scope: "category", endsIn: 10 }] },
+  { brand: "Walmart", day: 26, subject: "Deals for Days: up to 50% off", preheader: "Four days of deals across every department.", body: "Deals for Days is on: up to 50% off across every department, online and in store, through Monday.", offers: [{ kind: "percent", value: 50, scope: "category", endsIn: 4 }] },
+  // Macy's
+  { brand: "Macy's", day: 0.6, subject: "One Day Sale: 50-70% off + extra 20% with code ONEDAY", preheader: "Today only. Specials all day long.", body: "It's our One Day Sale: 50-70% off select styles, plus take an extra 20% off with promo code ONEDAY. Ends tonight.", offers: [{ kind: "percent", value: 70, scope: "category", endsIn: 1 }, { kind: "percent", value: 20, code: "ONEDAY", scope: "sitewide", endsIn: 1 }] },
+  { brand: "Macy's", day: 3.2, subject: "Free shipping on $25+ today", preheader: "Plus free returns, always.", body: "Free shipping on orders of $25 or more, today only. Free returns on everything, always.", offers: [{ kind: "free_shipping", minPurchase: 25, endsIn: 0 }] },
+  { brand: "Macy's", day: 8, subject: "Extra 30% off with code VIP", preheader: "VIP Sale: three days of extra savings.", body: "The VIP Sale is on. Take an extra 30% off with promo code VIP on select styles through Sunday. Excludes Specials and Everyday Values.", offers: [{ kind: "percent", value: 30, code: "VIP", scope: "sitewide", endsIn: 3, exclusions: "Excludes Specials, Everyday Values, Last Act" }] },
+  { brand: "Macy's", day: 14, subject: "Beauty: pick your free gift with any $50 purchase", preheader: "Choose from Clinique, Lancome and more.", body: "Pick your free 7-piece beauty gift with any $50 purchase from Clinique, Lancome, Estee Lauder and more.", offers: [{ kind: "other", minPurchase: 50, scope: "category", categories: ["beauty"], endsIn: 5 }] },
+  { brand: "Macy's", day: 21, subject: "Star Money Days: $10 off every $50 with code STAR", preheader: "Star Rewards members earn 3x points too.", body: "Star Money Days are here. Take $10 off every $50 you spend with promo code STAR, and earn bonus points on every purchase.", offers: [{ kind: "amount", value: 10, code: "STAR", minPurchase: 50, scope: "sitewide", endsIn: 4 }] },
+  { brand: "Macy's", day: 28, subject: "Labor Day Sale: 40-60% off + extra 15% with code LABOR", preheader: "Plus Specials all weekend.", body: "Labor Day Sale: 40-60% off select styles, plus an extra 15% off with promo code LABOR. Ends Monday.", offers: [{ kind: "percent", value: 60, scope: "category", endsIn: 3 }, { kind: "percent", value: 15, code: "LABOR", scope: "sitewide", endsIn: 3 }] },
+  // JCPenney
+  { brand: "JCPenney", day: 1.7, subject: "Extra 30% off with code SHOP4FALL", preheader: "Sweaters, denim, boots and more.", body: "Take an extra 30% off select apparel, shoes and home with promo code SHOP4FALL. Ends Sunday.", offers: [{ kind: "percent", value: 30, code: "SHOP4FALL", scope: "sitewide", endsIn: 3 }] },
+  { brand: "JCPenney", day: 7, subject: "$10 off $25 in store and online: code 10OFF25", preheader: "Your coupon is inside.", body: "Here's your coupon: $10 off a purchase of $25 or more with promo code 10OFF25, in store and online through Saturday.", offers: [{ kind: "amount", value: 10, code: "10OFF25", minPurchase: 25, scope: "sitewide", endsIn: 4 }] },
+  { brand: "JCPenney", day: 12, subject: "Buy one get one 50% off on kids apparel", preheader: "Arizona, Okie Dokie and Thereabouts.", body: "Buy one, get one 50% off on kids apparel from Arizona, Okie Dokie and Thereabouts. Mix and match sizes.", offers: [{ kind: "bogo", scope: "category", categories: ["kids"], endsIn: 6 }] },
+  { brand: "JCPenney", day: 20, subject: "Doorbusters: up to 60% off, ends tonight", preheader: "Towels, cookware, sheets and more.", body: "Doorbusters end tonight: up to 60% off towels, cookware, sheets and small appliances.", offers: [{ kind: "percent", value: 60, scope: "category", categories: ["home"], endsIn: 0 }] },
+  { brand: "JCPenney", day: 25, subject: "Extra 25% off sale styles with code GOBIG", preheader: "Two days only.", body: "Take an extra 25% off sale styles with promo code GOBIG. Two days only, online and in store.", offers: [{ kind: "percent", value: 25, code: "GOBIG", scope: "category", endsIn: 2 }] },
+  // Sephora
+  { brand: "Sephora", day: 0.4, subject: "Beauty Insider: 20% off with code YAYSAVE", preheader: "The Savings Event is on for all members.", body: "The Beauty Insider Savings Event is here. Take 20% off with promo code YAYSAVE, online and in store, through the 24th.", offers: [{ kind: "percent", value: 20, code: "YAYSAVE", scope: "sitewide", endsIn: 9 }] },
+  { brand: "Sephora", day: 5, subject: "Free shipping on every order this week", preheader: "No minimum. Ends Sunday.", body: "Free standard shipping on every order this week, no minimum required.", offers: [{ kind: "free_shipping", endsIn: 6 }] },
+  { brand: "Sephora", day: 10, subject: "New: 15% off fragrance for Rouge members", preheader: "Fall scents from Dior, YSL and Valentino.", body: "Rouge members: take 15% off fragrance this week, including new arrivals from Dior, YSL and Valentino.", offers: [{ kind: "percent", value: 15, scope: "category", categories: ["fragrance"], endsIn: 5 }] },
+  { brand: "Sephora", day: 18, subject: "Sale: up to 50% off select brands", preheader: "Makeup, skincare and hair, while supplies last.", body: "Up to 50% off select makeup, skincare and hair care brands while supplies last.", offers: [{ kind: "percent", value: 50, scope: "category", endsIn: 7 }] },
+  { brand: "Sephora", day: 23, subject: "Get a free 4-piece gift with $75 purchase, code GLOW", preheader: "Skincare minis from Drunk Elephant and Tatcha.", body: "Spend $75 and get a free 4-piece skincare gift with promo code GLOW at checkout. While supplies last.", offers: [{ kind: "other", code: "GLOW", minPurchase: 75, scope: "sitewide", endsIn: 5 }] },
+  // Ulta Beauty
+  { brand: "Ulta Beauty", day: 1.1, subject: "21 Days of Beauty: 50% off daily beauty steals", preheader: "New steals every day through the 30th.", body: "21 Days of Beauty is back. Get 50% off a new set of beauty steals every day through the 30th.", offers: [{ kind: "percent", value: 50, scope: "product", endsIn: 18 }] },
+  { brand: "Ulta Beauty", day: 4.5, subject: "$3.50 off $15: use code 350OFF", preheader: "Your coupon is ready.", body: "Save $3.50 on any purchase of $15 or more with coupon code 350OFF. Valid through Saturday.", offers: [{ kind: "amount", value: 3.5, code: "350OFF", minPurchase: 15, scope: "sitewide", endsIn: 4 }] },
+  { brand: "Ulta Beauty", day: 9.5, subject: "20% off your entire purchase with code 20OFF", preheader: "Excludes prestige brands. Ends Sunday.", body: "Take 20% off your entire purchase with promo code 20OFF. Excludes prestige brands and gift cards.", offers: [{ kind: "percent", value: 20, code: "20OFF", scope: "sitewide", endsIn: 5, exclusions: "Excludes prestige brands, gift cards" }] },
+  { brand: "Ulta Beauty", day: 16, subject: "Free shipping on $35+ orders", preheader: "Every day, no code needed.", body: "Free standard shipping on every order of $35 or more, no code needed.", offers: [{ kind: "free_shipping", minPurchase: 35, endsIn: 30 }] },
+  { brand: "Ulta Beauty", day: 22.5, subject: "Buy 2 get 1 free on skincare", preheader: "Cleansers, serums, moisturizers and more.", body: "Buy two, get one free on select skincare from CeraVe, The Ordinary, Good Molecules and more.", offers: [{ kind: "bogo", scope: "category", categories: ["skincare"], endsIn: 6 }] },
+  // Bath & Body Works
+  { brand: "Bath & Body Works", day: 0.2, subject: "Candle Day preview: 3-wick candles $9.95", preheader: "Rewards members shop early.", body: "Rewards members get early access to Candle Day: all 3-wick candles are $9.95 for two days.", offers: [{ kind: "other", scope: "category", categories: ["candles"], endsIn: 2 }] },
+  { brand: "Bath & Body Works", day: 3.8, subject: "Buy 3 get 3 free on body care", preheader: "Lotions, creams, mists and washes.", body: "Buy three, get three free on all body care: lotions, body creams, fragrance mists and shower gels.", offers: [{ kind: "bogo", scope: "category", categories: ["body care"], endsIn: 3 }] },
+  { brand: "Bath & Body Works", day: 8.5, subject: "$10 off $30 with code AUTUMN10", preheader: "Your fall coupon is here.", body: "Save $10 on any purchase of $30 or more with promo code AUTUMN10, in store and online through Saturday.", offers: [{ kind: "amount", value: 10, code: "AUTUMN10", minPurchase: 30, scope: "sitewide", endsIn: 4 }] },
+  { brand: "Bath & Body Works", day: 13.5, subject: "20% off everything with code FALLYALL", preheader: "Two days only.", body: "Take 20% off everything with promo code FALLYALL. Two days only.", offers: [{ kind: "percent", value: 20, code: "FALLYALL", scope: "sitewide", endsIn: 2 }] },
+  { brand: "Bath & Body Works", day: 19.5, subject: "Semi-annual sale: up to 75% off", preheader: "Candles, soaps and body care while they last.", body: "The Semi-Annual Sale is here. Up to 75% off candles, hand soaps and body care while supplies last.", offers: [{ kind: "percent", value: 75, scope: "category", endsIn: 9 }, { kind: "clearance", scope: "category", endsIn: 9 }] },
+  { brand: "Bath & Body Works", day: 26.5, subject: "Free shipping on $50+ today only", preheader: "No code needed.", body: "Free shipping on orders of $50 or more, today only. No code needed.", offers: [{ kind: "free_shipping", minPurchase: 50, endsIn: 0 }] },
+  // Best Buy
+  { brand: "Best Buy", day: 0.9, subject: "3-day sale: save up to $500 on laptops", preheader: "MacBook, Surface, Lenovo and more.", body: "Three days only: save up to $500 on select laptops from Apple, Microsoft, Lenovo and HP.", offers: [{ kind: "amount", value: 500, scope: "category", categories: ["laptops"], endsIn: 2 }] },
+  { brand: "Best Buy", day: 6.5, subject: "Open-box deals: extra 10% off with code OPENBOX10", preheader: "Certified open-box, full warranty.", body: "Take an extra 10% off certified open-box products with promo code OPENBOX10. Full manufacturer warranty included.", offers: [{ kind: "percent", value: 10, code: "OPENBOX10", scope: "category", categories: ["open-box"], endsIn: 5 }] },
+  { brand: "Best Buy", day: 14.5, subject: "Weekend deals: TVs from $299", preheader: "Samsung, LG, Sony and TCL.", body: "This weekend only: 4K TVs from $299, plus deals on soundbars and streaming devices.", offers: [{ kind: "other", scope: "category", categories: ["tv"], endsIn: 2 }] },
+  { brand: "Best Buy", day: 21.5, subject: "Members save an extra $20 on $100+", preheader: "My Best Buy Plus and Total members only.", body: "My Best Buy Plus and Total members: save an extra $20 on purchases of $100 or more through Sunday.", offers: [{ kind: "amount", value: 20, minPurchase: 100, scope: "sitewide", endsIn: 3 }] },
+  { brand: "Best Buy", day: 27.5, subject: "Labor Day appliance sale: up to 40% off", preheader: "Refrigerators, ranges, washers and dryers.", body: "Labor Day appliance sale: up to 40% off major appliances from Samsung, LG, Whirlpool and GE.", offers: [{ kind: "percent", value: 40, scope: "category", categories: ["appliances"], endsIn: 3 }] },
+  // GameStop
+  { brand: "GameStop", day: 2.2, subject: "Pro Week: 20% off pre-owned with code PROWEEK", preheader: "Pros save on games, consoles and accessories.", body: "Pro Week is here. Pro members take 20% off pre-owned games and accessories with promo code PROWEEK.", offers: [{ kind: "percent", value: 20, code: "PROWEEK", scope: "category", categories: ["pre-owned"], endsIn: 5 }] },
+  { brand: "GameStop", day: 12.5, subject: "Buy 2 get 1 free on pre-owned games", preheader: "Every platform, while supplies last.", body: "Buy two pre-owned games, get one free. Every platform, in store and online while supplies last.", offers: [{ kind: "bogo", scope: "category", categories: ["pre-owned"], endsIn: 7 }] },
+  { brand: "GameStop", day: 23.5, subject: "Trade credit bonus: extra 30% on trade-ins", preheader: "Pros get 40%.", body: "Get an extra 30% trade credit on games and consoles this week. Pro members get 40%.", offers: [{ kind: "other", scope: "category", endsIn: 4 }] },
+  // Home Depot
+  { brand: "Home Depot", day: 1.5, subject: "Fall savings: up to 35% off outdoor power", preheader: "Mowers, blowers and trimmers.", body: "Fall savings are on: up to 35% off outdoor power equipment from Ryobi, EGO and Milwaukee.", offers: [{ kind: "percent", value: 35, scope: "category", categories: ["outdoor"], endsIn: 12 }] },
+  { brand: "Home Depot", day: 7.5, subject: "Special buy of the day: 40% off tool storage", preheader: "Today only, while supplies last.", body: "Special Buy of the Day: 40% off tool chests, cabinets and workbenches. Today only.", offers: [{ kind: "percent", value: 40, scope: "category", categories: ["tool storage"], endsIn: 0 }] },
+  { brand: "Home Depot", day: 15.5, subject: "Free delivery on orders $45+", preheader: "Over one million eligible items.", body: "Free delivery on over one million eligible items when you spend $45 or more.", offers: [{ kind: "free_shipping", minPurchase: 45, endsIn: 30 }] },
+  { brand: "Home Depot", day: 24.5, subject: "Labor Day: up to 40% off appliances + $100 off $1,000", preheader: "Plus free delivery on appliances $396+.", body: "Labor Day appliance savings: up to 40% off select appliances, plus $100 off purchases of $1,000 or more.", offers: [{ kind: "percent", value: 40, scope: "category", categories: ["appliances"], endsIn: 4 }, { kind: "amount", value: 100, minPurchase: 1e3, scope: "category", categories: ["appliances"], endsIn: 4 }] },
+  // Nike
+  { brand: "Nike", day: 0.5, subject: "Members: extra 25% off sale with code SPORT25", preheader: "Sale styles just got better.", body: "Members take an extra 25% off sale styles with promo code SPORT25. Ends Sunday.", offers: [{ kind: "percent", value: 25, code: "SPORT25", scope: "category", categories: ["sale"], endsIn: 4 }] },
+  { brand: "Nike", day: 6.8, subject: "Free shipping for Members, always", preheader: "Join for free and never pay for shipping.", body: "Nike Members always get free standard shipping and 60-day returns. Join for free.", offers: [{ kind: "free_shipping" }] },
+  { brand: "Nike", day: 13.8, subject: "Up to 40% off new markdowns", preheader: "Running, training and lifestyle.", body: "New markdowns just landed: up to 40% off running shoes, training gear and lifestyle styles.", offers: [{ kind: "percent", value: 40, scope: "category", categories: ["sale"], endsIn: 8 }] },
+  { brand: "Nike", day: 21.8, subject: "Back to sport: 20% off select styles, code BTS20", preheader: "Kids and adults, through Sunday.", body: "Back to sport: 20% off select styles for kids and adults with promo code BTS20.", offers: [{ kind: "percent", value: 20, code: "BTS20", scope: "category", endsIn: 6 }] },
+  // Crocs
+  { brand: "Crocs", day: 1.9, subject: "25% off sitewide with code FALL25", preheader: "Clogs, sandals, Jibbitz and more.", body: "Take 25% off sitewide with promo code FALL25. Clogs, sandals, slides and Jibbitz charms, through Saturday.", offers: [{ kind: "percent", value: 25, code: "FALL25", scope: "sitewide", endsIn: 4 }] },
+  { brand: "Crocs", day: 9.8, subject: "Buy 2 pairs, get 1 free", preheader: "Stock up for the whole family.", body: "Buy two pairs, get a third free on select styles for the whole family.", offers: [{ kind: "bogo", scope: "category", endsIn: 5 }] },
+  { brand: "Crocs", day: 18.5, subject: "Clearance: styles from $19.99", preheader: "Limited sizes, while supplies last.", body: "Clearance styles from $19.99 while supplies last. Limited sizes and colors.", offers: [{ kind: "clearance", scope: "category", endsIn: 12 }] },
+  { brand: "Crocs", day: 26.8, subject: "Extra 20% off clearance with code EXTRA20", preheader: "Three days only.", body: "Take an extra 20% off clearance styles with promo code EXTRA20. Three days only.", offers: [{ kind: "percent", value: 20, code: "EXTRA20", scope: "category", categories: ["clearance"], endsIn: 3 }] },
+  // Old Navy
+  { brand: "Old Navy", day: 0.1, subject: "50% off all jeans, today only", preheader: "Every wash, every fit, adults and kids.", body: "Today only: 50% off all jeans for the whole family. Every wash, every fit, in store and online.", offers: [{ kind: "percent", value: 50, scope: "category", categories: ["jeans"], endsIn: 0 }] },
+  { brand: "Old Navy", day: 3.5, subject: "Extra 30% off with code EXTRA", preheader: "Stacks on sale. Two days only.", body: "Take an extra 30% off your purchase with promo code EXTRA. Stacks on sale prices, two days only.", offers: [{ kind: "percent", value: 30, code: "EXTRA", scope: "sitewide", endsIn: 2 }] },
+  { brand: "Old Navy", day: 10.5, subject: "40% off everything, no exclusions", preheader: "Yes, everything. Ends Tuesday.", body: "40% off everything, no exclusions, in store and online through Tuesday.", offers: [{ kind: "percent", value: 40, scope: "sitewide", endsIn: 2 }] },
+  { brand: "Old Navy", day: 17.5, subject: "Free shipping on $50+ with code SHIP50", preheader: "Plus new fall arrivals.", body: "Free shipping on orders of $50 or more with promo code SHIP50. Plus, new fall arrivals just dropped.", offers: [{ kind: "free_shipping", code: "SHIP50", minPurchase: 50, endsIn: 6 }] },
+  { brand: "Old Navy", day: 24.8, subject: "Labor Day: up to 60% off + 20% off with code YAY", preheader: "Four days of deals.", body: "Labor Day deals: up to 60% off select styles, plus take 20% off your purchase with promo code YAY.", offers: [{ kind: "percent", value: 60, scope: "category", endsIn: 3 }, { kind: "percent", value: 20, code: "YAY", scope: "sitewide", endsIn: 3 }] },
+  // Michaels
+  { brand: "Michaels", day: 4.2, subject: "40% off one regular price item with code 40SAVE", preheader: "Your weekly coupon.", body: "Take 40% off one regular price item with coupon code 40SAVE, in store and online through Saturday.", offers: [{ kind: "percent", value: 40, code: "40SAVE", scope: "product", endsIn: 3 }] },
+  { brand: "Michaels", day: 16.5, subject: "Fall decor: 50% off all pumpkins and florals", preheader: "Plus 30% off frames.", body: "Fall decor is 50% off: pumpkins, florals, wreaths and garlands. Plus 30% off custom frames.", offers: [{ kind: "percent", value: 50, scope: "category", categories: ["decor"], endsIn: 10 }] },
+  // Dick's Sporting Goods: three codes running at once, the community card
+  { brand: "Dick's Sporting Goods", day: 0.1, subject: "25% off select apparel with code SAVE25", preheader: "Nike, Under Armour, The North Face and more. Ends Thursday.", body: "Take 25% off select apparel from Nike, Under Armour, The North Face and more with promo code SAVE25. Online and in store through Thursday.", offers: [{ kind: "percent", value: 25, code: "SAVE25", scope: "category", categories: ["apparel"], endsIn: 4 }] },
+  { brand: "Dick's Sporting Goods", day: 3, subject: "$20 off $100 with code SCORE20", preheader: "Your ScoreCard coupon is here.", body: "ScoreCard members: take $20 off your purchase of $100 or more with promo code SCORE20, in store and online through Sunday.", offers: [{ kind: "amount", value: 20, code: "SCORE20", minPurchase: 100, scope: "sitewide", endsIn: 5 }] },
+  { brand: "Dick's Sporting Goods", day: 7, subject: "Buy one, get one 50% off on footwear", preheader: "Running, training, cleats and slides.", body: "Buy one pair, get a second 50% off on select footwear for the whole family. Mix and match brands and sizes.", offers: [{ kind: "bogo", scope: "category", categories: ["footwear"], endsIn: 3 }] },
+  { brand: "Dick's Sporting Goods", day: 12, subject: "Free shipping on $49+ with code SHIP49", preheader: "Plus curbside pickup in an hour.", body: "Get free shipping on orders of $49 or more with promo code SHIP49, or pick up curbside in an hour.", offers: [{ kind: "free_shipping", code: "SHIP49", minPurchase: 49, endsIn: 20 }] },
+  // Walgreens
+  { brand: "Walgreens", day: 0.5, subject: "25% off regular price items with code FALL25", preheader: "Vitamins, beauty, household and more. Ends Sunday.", body: "Take 25% off regular price items sitewide with promo code FALL25. Excludes prescriptions, photo and gift cards. Ends Sunday.", offers: [{ kind: "percent", value: 25, code: "FALL25", scope: "sitewide", endsIn: 3, exclusions: "Excludes prescriptions, photo, gift cards" }] },
+  { brand: "Walgreens", day: 4, subject: "Buy 1, get 1 50% off on vitamins and supplements", preheader: "Nature Made, Centrum, Olly and more.", body: "Buy one, get one 50% off on select vitamins and supplements from Nature Made, Centrum, Olly and more. Mix and match.", offers: [{ kind: "bogo", scope: "category", categories: ["vitamins"], endsIn: 5 }] },
+  { brand: "Walgreens", day: 9, subject: "$10 off $40 with code TENOFF", preheader: "Your myWalgreens coupon, ready to clip.", body: "myWalgreens members: save $10 on any purchase of $40 or more with promo code TENOFF, online only, through the end of the month.", offers: [{ kind: "amount", value: 10, code: "TENOFF", minPurchase: 40, scope: "sitewide", endsIn: 25 }] },
+  { brand: "Walgreens", day: 16, subject: "Photo: 50% off prints and enlargements", preheader: "Same day pickup in store.", body: "Take 50% off prints and enlargements this week, ready for same day pickup in store.", offers: [{ kind: "percent", value: 50, scope: "category", categories: ["photo"], endsIn: 6 }] },
+  // LEGO: promos without codes, so the card reads "Sales, rarely codes"
+  { brand: "LEGO", day: 1.4, subject: "Double VIP points on everything this weekend", preheader: "Insiders earn 2x through Sunday.", body: "LEGO Insiders earn double points on every purchase this weekend, online and in LEGO stores. Points add up to rewards on your next order.", offers: [{ kind: "other", scope: "sitewide", endsIn: 4 }] },
+  { brand: "LEGO", day: 6, subject: "Free gift with purchases of $100 or more", preheader: "The exclusive Halloween set, while supplies last.", body: "Get the exclusive Halloween mini set free with purchases of $100 or more. While supplies last.", offers: [{ kind: "other", minPurchase: 100, scope: "sitewide", endsIn: 8 }] },
+  { brand: "LEGO", day: 14, subject: "Sale: up to 30% off select sets", preheader: "Star Wars, City, Technic and more.", body: "Save up to 30% on select sets from Star Wars, City, Technic and Friends while they last.", offers: [{ kind: "percent", value: 30, scope: "category", endsIn: 10 }] }
+];
+function escapeHtml(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function offerLine(offer) {
+  const n = offer.value ?? 0;
+  switch (offer.kind) {
+    case "percent":
+      return `${n}% off`;
+    case "amount":
+      return `$${Number.isInteger(n) ? n : n.toFixed(2)} off`;
+    case "bogo":
+      return "Buy one, get one";
+    case "free_shipping":
+      return "Free shipping";
+    case "gift_card":
+      return `$${n} gift card`;
+    case "clearance":
+      return "Clearance";
+    default:
+      return "Special offer";
+  }
+}
+function renderEmailHtml(brand, campaign, accent, receivedAt) {
+  const headline = campaign.offers[0] ? offerLine(campaign.offers[0]) : campaign.subject;
+  const code = campaign.offers.find((offer) => offer.code)?.code ?? null;
+  const dated = receivedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const site = `https://www.${brand.domain}/`;
+  const extras = campaign.offers.slice(1).map((offer) => `<li style="margin:0 0 6px">${escapeHtml(offerLine(offer))}${offer.minPurchase ? ` on orders of $${offer.minPurchase}+` : ""}</li>`).join("");
+  return `<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>${escapeHtml(campaign.subject)}</title></head>
+<body style="margin:0;padding:0;background:#f3f3f3;font-family:Helvetica,Arial,sans-serif;color:#1a1a1a">
+<span style="display:none;max-height:0;overflow:hidden">${escapeHtml(campaign.preheader)}</span>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f3f3">
+<tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden">
+<tr><td style="background:${accent};padding:20px 28px;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.02em">${escapeHtml(brand.name)}</td></tr>
+<tr><td style="padding:36px 28px 12px;text-align:center">
+<div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#777">Limited time</div>
+<div style="font-size:44px;line-height:1.05;font-weight:800;margin:10px 0 8px;color:${accent}">${escapeHtml(headline)}</div>
+<div style="font-size:18px;color:#333">${escapeHtml(campaign.subject)}</div>
+</td></tr>
+${code ? `<tr><td style="padding:8px 28px 4px;text-align:center"><div style="display:inline-block;border:2px dashed ${accent};padding:10px 22px;font-size:20px;font-weight:700;letter-spacing:0.12em;color:#1a1a1a">USE CODE ${escapeHtml(code)}</div></td></tr>` : ""}
+<tr><td style="padding:20px 28px 8px;font-size:15px;line-height:1.55;color:#333">${escapeHtml(campaign.body)}</td></tr>
+${extras ? `<tr><td style="padding:0 28px 8px;font-size:14px;color:#444"><ul style="margin:8px 0 0;padding-left:20px">${extras}</ul></td></tr>` : ""}
+<tr><td style="padding:16px 28px 36px;text-align:center"><a href="${site}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;border-radius:4px">Shop now</a></td></tr>
+<tr><td style="background:#fafafa;border-top:1px solid #e6e6e6;padding:18px 28px;font-size:11px;line-height:1.6;color:#888">
+Sent ${dated} to a subscriber of ${escapeHtml(brand.name)}. Offers valid while supplies last; exclusions may apply. See ${escapeHtml(brand.domain ?? "")} for details.<br>
+<a href="${site}unsubscribe" style="color:#888">Unsubscribe</a> &middot; <a href="${site}privacy" style="color:#888">Privacy policy</a>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+function stem(word) {
+  let w = word.toLowerCase();
+  if (w.length > 5 && w.endsWith("ing")) w = w.slice(0, -3);
+  else if (w.length > 4 && w.endsWith("ies")) w = `${w.slice(0, -3)}i`;
+  else if (w.length > 4 && w.endsWith("ed")) w = w.slice(0, -2);
+  else if (w.length > 4 && w.endsWith("es")) w = w.slice(0, -2);
+  else if (w.length > 3 && w.endsWith("s")) w = w.slice(0, -1);
+  return w;
+}
+function tokens(text) {
+  return text.toLowerCase().replace(/[^a-z0-9$%' -]/g, " ").split(/\s+/).filter((word) => word.length > 1);
+}
+function endOfUtcDay(ms) {
+  const d = new Date(ms);
+  d.setUTCHours(23, 59, 59, 0);
+  return d;
+}
+var money = (n) => n.toFixed(2);
+function initializeDealsDemo() {
+  const rng2 = mulberry32(911893);
+  deals.brands = BRAND_SEED.map((seed) => {
+    const slug = slugify(seed.name);
+    return {
+      id: uuidFrom(rng2),
+      slug,
+      name: seed.name,
+      domain: seed.domain,
+      logoUrl: null,
+      category: seed.category,
+      signupUrl: `https://www.${seed.domain}/`,
+      signupProvider: null,
+      signupRecipe: null,
+      signupCheckedAt: null,
+      inboxAlias: slug,
+      status: seed.status,
+      firstEmailAt: null,
+      lastEmailAt: null,
+      emailCount: 0,
+      followerCount: seed.followers,
+      createdAt: new Date(anchor3 - 45 * DAY_MS2)
+    };
+  });
+  const accentByName = new Map(BRAND_SEED.map((seed) => [seed.name, seed.accent]));
+  const brandByName = new Map(deals.brands.map((brand) => [brand.name, brand]));
+  deals.emails = [];
+  deals.offers = [];
+  deals.html = /* @__PURE__ */ new Map();
+  for (const campaign of CAMPAIGNS) {
+    const brand = brandByName.get(campaign.brand);
+    if (!brand) throw new Error(`deals seed: unknown brand ${campaign.brand}`);
+    const id = uuidFrom(rng2);
+    const receivedAt = new Date(anchor3 - campaign.day * DAY_MS2 - Math.floor(rng2() * 50) * 60 * 1e3);
+    const offerSentences = campaign.offers.map((offer) => {
+      const parts = [offerLine(offer)];
+      if (offer.code) parts.push(`use code ${offer.code}`);
+      if (offer.minPurchase) parts.push(`on orders of $${offer.minPurchase} or more`);
+      if (offer.endsIn != null) parts.push(offer.endsIn === 0 ? "ends today" : `ends in ${offer.endsIn} days`);
+      return `${parts.join(", ")}.`;
+    });
+    const text = [campaign.subject, campaign.preheader, campaign.body, ...offerSentences].join("\n");
+    const email = {
+      id,
+      brandId: brand.id,
+      messageId: `<${id.slice(0, 13)}@mail.${brand.domain}>`,
+      kind: "promo",
+      source: "imap",
+      subject: campaign.subject,
+      preheader: campaign.preheader,
+      fromName: brand.name,
+      fromAddress: `deals@email.${brand.domain}`,
+      recipient: `${brand.slug}@mail.example.test`,
+      receivedAt,
+      rawKey: `raw/${id}.eml`,
+      htmlKey: `html/${id}.html`,
+      screenshotKey: null,
+      text,
+      unsubscribeUrl: `https://www.${brand.domain}/unsubscribe`,
+      confirmationUrl: null,
+      hasOffer: campaign.offers.length > 0,
+      spamVerdict: "PASS",
+      tsv: Array.from(new Set(tokens(text).map(stem))).join(" "),
+      createdAt: new Date(receivedAt.getTime() + 15 * 1e3)
+    };
+    deals.emails.push(email);
+    deals.html.set(id, renderEmailHtml(brand, campaign, accentByName.get(brand.name) ?? "#333333", receivedAt));
+    for (const spec of campaign.offers) {
+      deals.offers.push({
+        id: uuidFrom(rng2),
+        emailId: id,
+        brandId: brand.id,
+        kind: spec.kind,
+        value: spec.value != null ? money(spec.value) : null,
+        code: spec.code ?? null,
+        scope: spec.scope ?? "unknown",
+        categories: spec.categories ?? [],
+        minPurchase: spec.minPurchase != null ? money(spec.minPurchase) : null,
+        startsAt: null,
+        expiresAt: spec.endsIn != null ? endOfUtcDay(receivedAt.getTime() + spec.endsIn * DAY_MS2) : null,
+        exclusions: spec.exclusions ?? null,
+        confidence: spec.code ? 0.9 : 0.7,
+        extractedBy: "rules-v1",
+        extractedAt: new Date(receivedAt.getTime() + 40 * 1e3)
+      });
+    }
+    brand.emailCount += 1;
+    if (!brand.firstEmailAt || receivedAt < brand.firstEmailAt) brand.firstEmailAt = receivedAt;
+    if (!brand.lastEmailAt || receivedAt > brand.lastEmailAt) brand.lastEmailAt = receivedAt;
+  }
+  deals.emails.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
+  deals.follows = new Set(
+    [...FROM_STEALTH_SEED, ...BY_CATEGORY_SEED].filter((seed) => seed.following).map((seed) => {
+      const brand = brandByName.get(seed.brand);
+      if (!brand) throw new Error(`deals seed: onboarding names unknown brand ${seed.brand}`);
+      return brand.slug;
+    })
+  );
+}
+function getEmailHtml(id) {
+  return deals.html.get(id) ?? null;
 }
 
 // node_modules/@trpc/server/dist/index.mjs
@@ -29877,7 +30244,7 @@ var billingRouter = t.router({
   getTrialInfo: t.procedure.input(external_exports.any()).query(() => ({ copy: null, eligible: false, trialDays: null, reason: "had_subscription" })),
   getBillingMode: t.procedure.query(() => ({ mode: "stripe" }))
 });
-var HOUR_MS3 = 60 * 60 * 1e3;
+var HOUR_MS4 = 60 * 60 * 1e3;
 function notificationRows() {
   const alertRows = Array.from(database.alerts.values()).map((alert) => {
     const watch = database.watches.get(alert.watchId);
@@ -29895,7 +30262,7 @@ function notificationRows() {
         before: changed.before,
         after: changed.after
       },
-      readAt: alert.triggeredAt.getTime() < seedAnchor - 20 * HOUR_MS3 ? new Date(alert.triggeredAt.getTime() + HOUR_MS3) : null,
+      readAt: alert.triggeredAt.getTime() < seedAnchor - 20 * HOUR_MS4 ? new Date(alert.triggeredAt.getTime() + HOUR_MS4) : null,
       createdAt: alert.triggeredAt
     };
   });
@@ -31219,6 +31586,344 @@ var mentionsRouter = t.router({
   })
 });
 
+// src/deals-query.ts
+var DAY = 864e5;
+function parseSearchQuery(raw, now = /* @__PURE__ */ new Date()) {
+  let q = ` ${raw.trim().toLowerCase()} `;
+  const out = {
+    terms: "",
+    minPercent: null,
+    minAmount: null,
+    hasCode: false,
+    freeShipping: false,
+    since: null
+  };
+  q = q.replace(/\b(\d{1,2})\s?%\s?(?:off|discount)?\b/g, (_, n) => {
+    out.minPercent = Math.max(out.minPercent ?? 0, Number(n));
+    return " ";
+  });
+  q = q.replace(/\$\s?(\d{1,4})\s?off\b/g, (_, n) => {
+    out.minAmount = Math.max(out.minAmount ?? 0, Number(n));
+    return " ";
+  });
+  q = q.replace(/\bfree\s+shipping\b/g, () => {
+    out.freeShipping = true;
+    return " ";
+  });
+  q = q.replace(/\b(?:promo\s|coupon\s|discount\s)?codes?\b|\bcoupons?\b/g, () => {
+    out.hasCode = true;
+    return " ";
+  });
+  const sinceRules = [
+    [/\b(?:in the\s)?(?:last|past)\s+(\d{1,3})\s+days?\b/, (m) => Number(m[1]) * DAY],
+    [/\b(?:in the\s)?(?:last|past)\s+(\d{1,2})\s+weeks?\b/, (m) => Number(m[1]) * 7 * DAY],
+    [/\b(?:in the\s)?(?:last|past)\s+week\b/, () => 7 * DAY],
+    [/\b(?:in the\s)?(?:last|past)\s+month\b/, () => 30 * DAY],
+    [/\bthis\s+week\b/, () => 7 * DAY],
+    [/\bthis\s+month\b/, () => 30 * DAY],
+    [/\btoday\b/, () => DAY],
+    [/\byesterday\b/, () => 2 * DAY],
+    [/\brecent(?:ly)?\b/, () => 14 * DAY]
+  ];
+  for (const [re, ms] of sinceRules) {
+    const m = q.match(re);
+    if (m) {
+      out.since = new Date(now.getTime() - ms(m));
+      q = q.replace(re, " ");
+    }
+  }
+  q = q.replace(
+    /\b(?:stores?|brands?|shops?|retailers?|deals?|sales?|running|offering|with|has|have|off|on|the|a|an|at|from|for|and|of|that|are|is|in)\b/g,
+    " "
+  );
+  out.terms = q.replace(/[^a-z0-9' -]/g, " ").replace(/\s+/g, " ").trim();
+  return out;
+}
+
+// src/deals-routers.ts
+var DAY2 = 864e5;
+var brandById = (id) => deals.brands.find((brand) => brand.id === id);
+var offersByEmail = (ids) => {
+  const wanted = new Set(ids);
+  const byEmail = /* @__PURE__ */ new Map();
+  for (const offer of deals.offers) {
+    if (!wanted.has(offer.emailId)) continue;
+    byEmail.set(offer.emailId, [...byEmail.get(offer.emailId) ?? [], offer]);
+  }
+  return byEmail;
+};
+var promoEmails = () => deals.emails.filter((email) => email.kind === "promo");
+var byNewest = (a, b) => b.receivedAt.getTime() - a.receivedAt.getTime() || (b.id > a.id ? 1 : -1);
+var brandsRouter = t.router({
+  list: t.procedure.input(external_exports.object({ q: external_exports.string().trim().max(80).optional(), limit: external_exports.number().int().min(1).max(200).default(50) }).default({})).query(({ input }) => {
+    const needle = input.q?.toLowerCase();
+    return deals.brands.filter((brand) => !needle || brand.name.toLowerCase().includes(needle)).sort((a, b) => {
+      const at = a.lastEmailAt?.getTime();
+      const bt = b.lastEmailAt?.getTime();
+      if (at == null && bt == null) return a.name.localeCompare(b.name);
+      if (at == null) return 1;
+      if (bt == null) return -1;
+      return bt - at || a.name.localeCompare(b.name);
+    }).slice(0, input.limit);
+  }),
+  bySlug: t.procedure.input(external_exports.object({ slug: external_exports.string().min(1).max(64) })).query(({ input }) => {
+    const brand = deals.brands.find((row) => row.slug === input.slug);
+    if (!brand) return null;
+    const now = /* @__PURE__ */ new Date();
+    const since30 = new Date(now.getTime() - 30 * DAY2);
+    const recent = promoEmails().filter((email) => email.brandId === brand.id).sort(byNewest).slice(0, 50);
+    const byEmail = offersByEmail(recent.map((email) => email.id));
+    const activeCodes = deals.offers.filter(
+      (offer) => offer.brandId === brand.id && offer.code !== null && (offer.expiresAt === null || offer.expiresAt >= now) && offer.extractedAt >= since30
+    ).sort((a, b) => b.extractedAt.getTime() - a.extractedAt.getTime()).slice(0, 20).map((offer) => ({ code: offer.code, kind: offer.kind, value: offer.value, expiresAt: offer.expiresAt, emailId: offer.emailId }));
+    const window2 = recent.filter((email) => email.receivedAt >= since30);
+    const windowIds = new Set(window2.map((email) => email.id));
+    let bestPercent30d = null;
+    for (const offer of deals.offers) {
+      if (!windowIds.has(offer.emailId) || offer.kind !== "percent" || offer.value === null) continue;
+      bestPercent30d = Math.max(bestPercent30d ?? 0, Number(offer.value));
+    }
+    return {
+      brand,
+      emails: recent.map((email) => ({ ...email, offers: byEmail.get(email.id) ?? [] })),
+      activeCodes,
+      stats: { emails30d: window2.length, bestPercent30d }
+    };
+  })
+});
+var emailsRouter = t.router({
+  list: t.procedure.input(
+    external_exports.object({
+      brandSlug: external_exports.string().max(64).optional(),
+      limit: external_exports.number().int().min(1).max(100).default(30),
+      cursor: external_exports.object({ receivedAt: external_exports.date(), id: external_exports.string().uuid() }).optional()
+    }).default({})
+  ).query(({ input }) => {
+    const brand = input.brandSlug ? deals.brands.find((row) => row.slug === input.brandSlug) : null;
+    const cursor = input.cursor;
+    const rows = promoEmails().filter((email) => !input.brandSlug || email.brandId === brand?.id).filter(
+      (email) => !cursor || email.receivedAt < cursor.receivedAt || email.receivedAt.getTime() === cursor.receivedAt.getTime() && email.id < cursor.id
+    ).sort(byNewest).slice(0, input.limit + 1);
+    const page = rows.slice(0, input.limit);
+    const byEmail = offersByEmail(page.map((email) => email.id));
+    const last = page[page.length - 1];
+    return {
+      items: page.map((email) => ({ ...email, brand: brandById(email.brandId), offers: byEmail.get(email.id) ?? [] })),
+      nextCursor: rows.length > input.limit && last ? { receivedAt: last.receivedAt, id: last.id } : null
+    };
+  }),
+  get: t.procedure.input(external_exports.object({ id: external_exports.string().uuid() })).query(({ input }) => {
+    const email = deals.emails.find((row) => row.id === input.id);
+    if (!email) return null;
+    const brand = brandById(email.brandId);
+    const offers = deals.offers.filter((offer) => offer.emailId === email.id);
+    return { ...email, brand, offers, htmlUrl: email.htmlKey ? `/emails/${email.id}/html` : null };
+  }),
+  stats: t.procedure.query(() => {
+    const promo = promoEmails();
+    const latest = deals.emails.reduce(
+      (max, email) => max === null || email.receivedAt > max ? email.receivedAt : max,
+      null
+    );
+    return {
+      emails: promo.length,
+      withOffer: deals.emails.filter((email) => email.hasOffer).length,
+      brands: new Set(deals.emails.map((email) => email.brandId)).size,
+      latest
+    };
+  })
+});
+function bestOfferOf(list) {
+  const percent = list.filter((o) => o.kind === "percent").sort((a, b) => Number(b.value) - Number(a.value))[0];
+  if (percent) return percent;
+  const amount = list.filter((o) => o.kind === "amount").sort((a, b) => Number(b.value) - Number(a.value))[0];
+  return amount ?? list[0] ?? null;
+}
+function textMatch(email, terms) {
+  if (terms.length === 0) return 0;
+  const subjectWords = tokens(email.subject).map(stem);
+  const bodyWords = tokens(`${email.preheader ?? ""} ${email.text}`).map(stem);
+  let rank = 0;
+  for (const term of terms) {
+    const inSubject = subjectWords.some((word) => word.startsWith(term));
+    const inBody = inSubject || bodyWords.some((word) => word.startsWith(term));
+    if (!inBody) return 0;
+    rank += inSubject ? 2 : 1;
+  }
+  return rank / (terms.length * 2);
+}
+function searchEmails(input) {
+  const parsed = parseSearchQuery(input.q);
+  const terms = parsed.terms;
+  const minPercent = input.minPercent ?? parsed.minPercent;
+  const minAmount = input.minAmount ?? parsed.minAmount;
+  const hasCode = input.hasCode || parsed.hasCode;
+  const freeShipping = input.freeShipping || parsed.freeShipping;
+  const since = input.since ?? parsed.since;
+  const limit = Math.min(input.limit, 200);
+  const termWords = tokens(terms).map(stem);
+  const offerConditions = [];
+  if (minPercent !== null && minPercent !== void 0) offerConditions.push((o) => o.kind === "percent" && Number(o.value) >= minPercent);
+  if (minAmount !== null && minAmount !== void 0) offerConditions.push((o) => o.kind === "amount" && Number(o.value) >= minAmount);
+  if (hasCode) offerConditions.push((o) => o.code !== null);
+  if (freeShipping) offerConditions.push((o) => o.kind === "free_shipping");
+  const candidates = promoEmails();
+  const byEmail = offersByEmail(candidates.map((email) => email.id));
+  const scored = [];
+  for (const email of candidates) {
+    const brand = brandById(email.brandId);
+    if (since && email.receivedAt < since) continue;
+    if (input.brandSlug && brand.slug !== input.brandSlug) continue;
+    const offers = byEmail.get(email.id) ?? [];
+    if (!offerConditions.every((condition) => offers.some(condition))) continue;
+    let rank = 0;
+    if (termWords.length > 0) {
+      rank = textMatch(email, termWords);
+      const brandMatch = brand.name.toLowerCase().includes(terms);
+      if (rank === 0 && !brandMatch) continue;
+      if (brandMatch) rank = Math.max(rank, 0.5);
+    }
+    scored.push({ email, brand, offers, rank });
+  }
+  scored.sort((a, b) => termWords.length > 0 && b.rank !== a.rank ? b.rank - a.rank : byNewest(a.email, b.email));
+  return { hits: scored.slice(0, limit), terms };
+}
+function groupByBrand(hits) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const hit of hits) groups.set(hit.brand.id, [...groups.get(hit.brand.id) ?? [], hit]);
+  const out = [];
+  for (const list of groups.values()) {
+    const scored = list.map((hit) => ({ hit, best: bestOfferOf(hit.offers) })).sort((a, b) => {
+      const av = a.best?.kind === "percent" || a.best?.kind === "amount" ? Number(a.best.value) : -1;
+      const bv = b.best?.kind === "percent" || b.best?.kind === "amount" ? Number(b.best.value) : -1;
+      if (bv !== av) return bv - av;
+      return b.hit.email.receivedAt.getTime() - a.hit.email.receivedAt.getTime();
+    });
+    const top = scored[0];
+    out.push({ brand: top.hit.brand, email: top.hit.email, bestOffer: top.best, matches: list.length });
+  }
+  return out.sort((a, b) => {
+    const av = a.bestOffer?.kind === "percent" ? Number(a.bestOffer.value) : -1;
+    const bv = b.bestOffer?.kind === "percent" ? Number(b.bestOffer.value) : -1;
+    if (bv !== av) return bv - av;
+    return b.email.receivedAt.getTime() - a.email.receivedAt.getTime();
+  });
+}
+var searchInput = external_exports.object({
+  q: external_exports.string().trim().max(200).default(""),
+  brandSlug: external_exports.string().max(64).nullish(),
+  minPercent: external_exports.number().int().min(1).max(99).nullish(),
+  minAmount: external_exports.number().min(1).nullish(),
+  hasCode: external_exports.boolean().optional(),
+  freeShipping: external_exports.boolean().optional(),
+  since: external_exports.date().nullish(),
+  groupBy: external_exports.enum(["email", "brand"]).default("email"),
+  limit: external_exports.number().int().min(1).max(200).default(50)
+});
+var searchRouter = t.router({
+  query: t.procedure.input(searchInput).query(({ input }) => {
+    const { hits, terms } = searchEmails({
+      q: input.q,
+      brandSlug: input.brandSlug ?? null,
+      minPercent: input.minPercent ?? null,
+      minAmount: input.minAmount ?? null,
+      hasCode: input.hasCode ?? false,
+      freeShipping: input.freeShipping ?? false,
+      since: input.since ?? null,
+      limit: input.groupBy === "brand" ? 200 : input.limit
+    });
+    if (input.groupBy === "brand") return { mode: "brand", terms, brands: groupByBrand(hits).slice(0, input.limit) };
+    return { mode: "email", terms, emails: hits };
+  })
+});
+var THUMB_RANK = { percent: 0, amount: 1, gift_card: 2, bogo: 3, free_shipping: 4, clearance: 5, other: 6 };
+function thumbHeadline(offer) {
+  if (!offer) return "Sale";
+  const n = offer.value === null ? null : Number(offer.value);
+  switch (offer.kind) {
+    case "percent":
+      return n === null ? "% off" : `${n}%`;
+    case "amount":
+    case "gift_card":
+      return n === null ? "$ off" : Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+    case "bogo":
+      return "BOGO";
+    case "free_shipping":
+      return "Free ship";
+    default:
+      return "Sale";
+  }
+}
+function thumbsFor(brand) {
+  const recent = promoEmails().filter((email) => email.brandId === brand.id).sort(byNewest).slice(0, 3);
+  const byEmail = offersByEmail(recent.map((email) => email.id));
+  return recent.map((email) => {
+    const offers = [...byEmail.get(email.id) ?? []].sort(
+      (a, b) => THUMB_RANK[a.kind] - THUMB_RANK[b.kind] || Number(b.value ?? 0) - Number(a.value ?? 0)
+    );
+    const lead = offers[0];
+    return {
+      emailId: email.id,
+      headline: thumbHeadline(lead),
+      code: offers.find((offer) => offer.code)?.code ?? null,
+      expiresAt: lead?.expiresAt ?? null
+    };
+  });
+}
+function suggestionFrom(seed) {
+  const brand = deals.brands.find((row) => row.name === seed.brand);
+  if (!brand) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `onboarding seed names unknown brand ${seed.brand}` });
+  return {
+    slug: brand.slug,
+    name: brand.name,
+    domain: brand.domain,
+    category: brand.category,
+    reason: seed.reason,
+    following: deals.follows.has(brand.slug),
+    codesLive: seed.codesLive,
+    bestPercent30d: seed.bestPercent30d,
+    emails30d: seed.emails30d,
+    headline: seed.headline,
+    note: seed.note,
+    lastEmailAt: seed.lastEmailAtOverride ?? brand.lastEmailAt,
+    followerCount: brand.followerCount,
+    thumbs: thumbsFor(brand)
+  };
+}
+var onboardingRouter = t.router({
+  suggestions: t.procedure.query(() => ({
+    fromStealth: FROM_STEALTH_SEED.map(suggestionFrom),
+    byCategory: ONBOARDING_CATEGORIES.map((category) => ({
+      category: category.id,
+      brands: BY_CATEGORY_SEED.filter((seed) => seed.categories.includes(category.id)).map(suggestionFrom)
+    })),
+    categories: ONBOARDING_CATEGORIES.map((category) => ({ ...category }))
+  }))
+});
+var followsRouter = t.router({
+  list: t.procedure.query(() => Array.from(deals.follows)),
+  set: t.procedure.input(external_exports.object({ slug: external_exports.string().min(1).max(64), following: external_exports.boolean() })).mutation(({ input }) => {
+    const brand = deals.brands.find((row) => row.slug === input.slug);
+    if (!brand) throw new TRPCError({ code: "NOT_FOUND", message: "That store is not on the list." });
+    const was = deals.follows.has(brand.slug);
+    if (input.following && !was) {
+      deals.follows.add(brand.slug);
+      brand.followerCount += 1;
+    } else if (!input.following && was) {
+      deals.follows.delete(brand.slug);
+      brand.followerCount = Math.max(0, brand.followerCount - 1);
+    }
+    return { slug: brand.slug, following: input.following, followerCount: brand.followerCount };
+  })
+});
+var dealsRouter = t.router({
+  brands: brandsRouter,
+  emails: emailsRouter,
+  search: searchRouter,
+  onboarding: onboardingRouter,
+  follows: followsRouter
+});
+
 // src/trpc.ts
 var PollIntervalEnum = external_exports.union([external_exports.literal(120), external_exports.literal(180), external_exports.literal(360), external_exports.literal(1440)]);
 var CreateWatchSchema = external_exports.object({
@@ -31446,6 +32151,8 @@ var router = t.router({
   billing: billingRouter,
   notifications: notificationsRouter,
   mentions: mentionsRouter,
+  // the deals-engine API, stubbed over the seed; see deals-routers.ts
+  deals: dealsRouter,
   ...shellRouters
 });
 
@@ -31454,6 +32161,8 @@ var app = (0, import_express.default)();
 var PORT = process.env.PORT || 3e3;
 var demoUserId = initializeDemo();
 console.log(`Demo user ID: ${demoUserId}`);
+initializeDealsDemo();
+var DEALS_APP_ORIGIN = process.env.APP_ORIGIN ?? "http://localhost:3002";
 app.use(
   (0, import_cors.default)({
     origin: (origin, cb) => cb(null, origin ?? true),
@@ -31500,6 +32209,21 @@ app.use(
 );
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+app.get("/emails/:id/html", (req, res) => {
+  const id = req.params.id;
+  if (!/^[0-9a-f-]{36}$/.test(id)) return res.status(400).send("bad id");
+  const html = getEmailHtml(id);
+  if (!html) return res.status(404).send("no html");
+  res.setHeader("content-type", "text/html; charset=utf-8");
+  res.setHeader(
+    "content-security-policy",
+    `default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; font-src https: data:; frame-ancestors 'self' ${DEALS_APP_ORIGIN}; form-action 'none'; base-uri 'none'`
+  );
+  res.setHeader("x-content-type-options", "nosniff");
+  res.setHeader("referrer-policy", "no-referrer");
+  res.setHeader("cache-control", "private, max-age=3600");
+  return res.send(html);
 });
 var SANDBOX_SESSION = {
   session: {

@@ -1,0 +1,1 @@
+import{e as m,a as d}from"./vendor-DCMH1Edw.js";const c="email";function p(t){const[n,s]=m(),a=n.get(c),o=(a?t.find(e=>e.id===a):void 0)??t[0]??null,u=d.useCallback(e=>{s(l=>{const r=new URLSearchParams(l);return r.set(c,e),r},{replace:!0})},[s]);return{selected:o,select:u}}export{p as u};
