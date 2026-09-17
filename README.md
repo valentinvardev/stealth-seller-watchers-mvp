@@ -101,6 +101,17 @@ from `backend/src/mentions-seed.ts`, the 2026-09-01 pull curated by hand. The
 frontend keeps its own copy of verdicts and view counts in localStorage so a
 device's triage and "since you looked" deltas survive an instance recycle.
 
+Under `deals.*` (the `/deals` pages, promo email engine spike): `brands.list`,
+`brands.bySlug`, `emails.list`, `emails.get`, `emails.stats`, `search.query`,
+`onboarding.suggestions`, `follows.list` and `follows.set`, all answered from
+the deterministic seed in `backend/src/deals-seed.ts` (19 stores, 72 emails
+with their HTML, offers extracted by hand). Plus `/emails/:id/html`, which
+serves a seeded email's HTML with a strict CSP for the preview iframe. This
+spike is frozen: the engine behind it (real ingestion, thumbnails, hybrid
+search, LLM extraction, automated newsletter signups) moved to its own repo,
+and the UI lives there as `apps/web` against the real API. What is here stays
+as the click-through demo it was built for.
+
 ## Caveats
 
 Worth knowing before showing this to anyone:
